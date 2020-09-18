@@ -73,14 +73,19 @@ public:
 
 #define INODE_NUM 1024
 
-// Inodes per block.
+/*
+ * Inodes per block. Here means a block only contain an inode, 
+ * so that there are 1024(INODE_NUM) blocks for inodes
+ */
 #define IPB 1
-// (BLOCK_SIZE / sizeof(struct inode))
 
-// Block containing inode i
+// Find block which contains inode i
 #define IBLOCK(i, nblocks) ((nblocks) / BPB + (i) / IPB + 3)
 
-// Bitmap bits per block
+/*
+ * Bitmap bits per block
+ * Every block's bitmap is (uint32_t, int), which is 8 bytes in total
+ */
 #define BPB (BLOCK_SIZE * 8)
 
 // Block containing bit for block b

@@ -20,7 +20,7 @@ disk::read_block(blockid_t id, char *buf)
     return;
   }
   
-  if (buf == nullptr)
+  if (buf == NULL)
   {
     printf("\td: error! cannot write to a null ptr *buf\n");
     return;
@@ -38,7 +38,7 @@ disk::write_block(blockid_t id, const char *buf)
     return;
   }
 
-  if (buf == nullptr)
+  if (buf == NULL)
   {
     printf("\td: error! cannot read from a null ptr *buf\n");
     return;
@@ -58,11 +58,14 @@ block_manager::alloc_block()
    * note: you should mark the corresponding bit in block bitmap when alloc.
    * you need to think about which block you can start to be allocated.
    */
-  std::map<uint32_t, int>::iterator it = using_blocks.begin();
-  for (; it != using_blocks.end(); it++)
+  for (blockid_t i = 3; i < BLOCK_NUM; ++i)
   {
-    if (it->second == 0)
-      return it->first;
+    if (using_blocks[i] == 0)
+    {
+      using_block[i] = 1;
+      printf("\tbm: allocate a block with id %i", i);     
+      return i;
+    }
   }
 
   return 0;
@@ -131,6 +134,7 @@ inode_manager::alloc_inode(uint32_t type)
    * note: the normal inode block should begin from the 2nd inode block.
    * the 1st is used for root_dir, see inode_manager::inode_manager().
    */
+  
   return 1;
 }
 
