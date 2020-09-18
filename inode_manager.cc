@@ -4,17 +4,21 @@
 
 disk::disk()
 {
-  bzero(blocks, sizeof(blocks));
+  /* set all bits in blocks 0 */
+  // bzero(blocks, sizeof(blocks)); 
+  memset(blocks, 0, sizeof(blocks));
 }
 
 void
 disk::read_block(blockid_t id, char *buf)
 {
+  buf = reinterpret_cast<char *>(blocks[id]);
 }
 
 void
 disk::write_block(blockid_t id, const char *buf)
 {
+  memcpy(blocks[id], buf, sizeof(buf));
 }
 
 // block layer -----------------------------------------
@@ -28,6 +32,16 @@ block_manager::alloc_block()
    * note: you should mark the corresponding bit in block bitmap when alloc.
    * you need to think about which block you can start to be allocated.
    */
+  std::map<uint32_t, int>::iterator it = using_blocks.begin();
+  while (it != using_blocks.end())
+  {
+    if (it->second == 0)
+    {
+      return it->first;
+    }
+
+    it++;
+  }
 
   return 0;
 }
@@ -39,7 +53,7 @@ block_manager::free_block(uint32_t id)
    * your code goes here.
    * note: you should unmark the corresponding bit in the block bitmap when free.
    */
-  
+  using_blocks[id] = 0;
   return;
 }
 
@@ -54,6 +68,11 @@ block_manager::block_manager()
   sb.nblocks = BLOCK_NUM;
   sb.ninodes = INODE_NUM;
 
+  // init bit map with 0
+  for (uint32_t i = 0; i < BLOCK_NUM; ++i)
+  {
+    using_blocks.insert(std::pair(i, 0));
+  }
 }
 
 void

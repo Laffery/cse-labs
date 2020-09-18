@@ -4,21 +4,40 @@
 #define inode_h
 
 #include <stdint.h>
+#include <map>
 #include "extent_protocol.h" // TODO: delete it
 
-#define DISK_SIZE  1024*1024*16
+/*
+ * TODO: part1A  
+ * implement disk::read_block, disk::write_block, inode_manager::alloc_inode and inode_manager::getattr
+ * to support CREATE and GETATTR APIs
+ * should pass the test_create_and_getattr() in part1_tester, which tests creating empty files, getting their attributes like type.
+ * 
+ * TODO: part1B
+ * implement inode_manager::write_file, inode_manager::read_file, block_manager::alloc_block, block_manager::free_block
+ * to support PUT and GET APIs
+ * should pass the test_put_and_get() in part1_tester, which, write and read files.
+ * 
+ * TODO: part1C
+ * implement inode_manager::remove_file and inode_manager::free_inode
+ * to support REMOVE API
+ * should pass the test_remove() in part1_tester.
+ */
+
+#define DISK_SIZE 1024 * 1024 * 16 // 16MB
 #define BLOCK_SIZE 512
-#define BLOCK_NUM  (DISK_SIZE/BLOCK_SIZE)
+#define BLOCK_NUM (DISK_SIZE / BLOCK_SIZE) // 32768
 
 typedef uint32_t blockid_t;
 
 // disk layer -----------------------------------------
 
-class disk {
- private:
+class disk
+{
+private:
   unsigned char blocks[BLOCK_NUM][BLOCK_SIZE];
 
- public:
+public:
   disk();
   void read_block(uint32_t id, char *buf);
   void write_block(uint32_t id, const char *buf);
@@ -26,19 +45,23 @@ class disk {
 
 // block layer -----------------------------------------
 
-typedef struct superblock {
+typedef struct superblock
+{
   uint32_t size;
   uint32_t nblocks;
   uint32_t ninodes;
 } superblock_t;
 
-class block_manager {
- private:
-  disk *d;
-  std::map <uint32_t, int> using_blocks;
- public:
-  block_manager();
+class block_manager
+{
+public:
   struct superblock sb;
+private:
+  disk *d;
+  std::map<uint32_t, int> using_blocks; // bit map to manage block
+
+public:
+  block_manager();
 
   uint32_t alloc_block();
   void free_block(uint32_t id);
@@ -48,41 +71,43 @@ class block_manager {
 
 // inode layer -----------------------------------------
 
-#define INODE_NUM  1024
+#define INODE_NUM 1024
 
 // Inodes per block.
-#define IPB           1
-//(BLOCK_SIZE / sizeof(struct inode))
+#define IPB 1
+// (BLOCK_SIZE / sizeof(struct inode))
 
 // Block containing inode i
-#define IBLOCK(i, nblocks)     ((nblocks)/BPB + (i)/IPB + 3)
+#define IBLOCK(i, nblocks) ((nblocks) / BPB + (i) / IPB + 3)
 
 // Bitmap bits per block
-#define BPB           (BLOCK_SIZE*8)
+#define BPB (BLOCK_SIZE * 8)
 
 // Block containing bit for block b
-#define BBLOCK(b) ((b)/BPB + 2)
+#define BBLOCK(b) ((b) / BPB + 2)
 
 #define NDIRECT 100
 #define NINDIRECT (BLOCK_SIZE / sizeof(uint))
 #define MAXFILE (NDIRECT + NINDIRECT)
 
-typedef struct inode {
+typedef struct inode
+{
   short type;
   unsigned int size;
   unsigned int atime;
   unsigned int mtime;
   unsigned int ctime;
-  blockid_t blocks[NDIRECT+1];   // Data block addresses
+  blockid_t blocks[NDIRECT + 1]; // Data block addresses
 } inode_t;
 
-class inode_manager {
- private:
+class inode_manager
+{
+private:
   block_manager *bm;
-  struct inode* get_inode(uint32_t inum);
+  struct inode *get_inode(uint32_t inum);
   void put_inode(uint32_t inum, struct inode *ino);
 
- public:
+public:
   inode_manager();
   uint32_t alloc_inode(uint32_t type);
   void free_inode(uint32_t inum);
@@ -93,4 +118,3 @@ class inode_manager {
 };
 
 #endif
-
