@@ -12,13 +12,32 @@ disk::disk()
 void
 disk::read_block(blockid_t id, char *buf)
 {
-  buf = reinterpret_cast<char *>(blocks[id]);
+  if (id < 0 || id >= BLOCK_NUM)
+  {
+    std::cout << "\td: cannot read block with invalid id!\n";
+    return;
+  }
+
+  memcpy(buf, blocks[id], BLOCK_SIZE);
 }
 
 void
 disk::write_block(blockid_t id, const char *buf)
 {
-  memcpy(blocks[id], buf, sizeof(buf));
+  if (id < 0 || id >= BLOCK_NUM)
+  {
+    std::cout << "\td: cannot write to block with invalid id!\n";
+    return;
+  }
+
+  if (sizeof(buf) <= BLOCK_SIZE)
+  {
+    memcpy(blocks[id], buf, sizeof(buf));
+  }
+  else
+  {
+    memcpy(blocks[id], buf, BLOCK_SIZE);
+  }
 }
 
 // block layer -----------------------------------------
@@ -71,7 +90,7 @@ block_manager::block_manager()
   // init bit map with 0
   for (uint32_t i = 0; i < BLOCK_NUM; ++i)
   {
-    using_blocks.insert(std::pair(i, 0));
+    using_blocks.insert(std::pair<uint32_t, int>(i, 0));
   }
 }
 
