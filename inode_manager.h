@@ -104,7 +104,9 @@ class inode_manager
 {
 private:
   block_manager *bm;
-  struct inode *get_inode(uint32_t inum);
+
+private:
+  struct inode* get_inode(uint32_t inum);
   void put_inode(uint32_t inum, struct inode *ino);
 
 public:

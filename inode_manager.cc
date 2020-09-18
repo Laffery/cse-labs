@@ -1,5 +1,7 @@
 #include "inode_manager.h"
 
+#define MIN(a,b) ((a)<(b) ? (a) : (b))
+
 // disk layer -----------------------------------------
 
 disk::disk()
@@ -14,7 +16,13 @@ disk::read_block(blockid_t id, char *buf)
 {
   if (id < 0 || id >= BLOCK_NUM)
   {
-    std::cout << "\td: cannot read block with invalid id!\n";
+    printf("\td: error! cannot read block with invalid id %d\n", id);
+    return;
+  }
+  
+  if (buf == nullptr)
+  {
+    printf("\td: error! cannot write to a null ptr *buf\n");
     return;
   }
 
@@ -26,18 +34,17 @@ disk::write_block(blockid_t id, const char *buf)
 {
   if (id < 0 || id >= BLOCK_NUM)
   {
-    std::cout << "\td: cannot write to block with invalid id!\n";
+    printf("\td: error! cannot write to block with invalid id %d\n", id);
     return;
   }
 
-  if (sizeof(buf) <= BLOCK_SIZE)
+  if (buf == nullptr)
   {
-    memcpy(blocks[id], buf, sizeof(buf));
+    printf("\td: error! cannot read from a null ptr *buf\n");
+    return;
   }
-  else
-  {
-    memcpy(blocks[id], buf, BLOCK_SIZE);
-  }
+
+  memcpy(blocks[id], buf, MIN(sizeof(buf), BLOCK_SIZE));
 }
 
 // block layer -----------------------------------------
@@ -52,14 +59,10 @@ block_manager::alloc_block()
    * you need to think about which block you can start to be allocated.
    */
   std::map<uint32_t, int>::iterator it = using_blocks.begin();
-  while (it != using_blocks.end())
+  for (; it != using_blocks.end(); it++)
   {
     if (it->second == 0)
-    {
       return it->first;
-    }
-
-    it++;
   }
 
   return 0;
@@ -111,7 +114,7 @@ block_manager::write_block(uint32_t id, const char *buf)
 inode_manager::inode_manager()
 {
   bm = new block_manager();
-  uint32_t root_dir = alloc_inode(extent_protocol::T_DIR);
+  uint32_t root_dir = alloc_inode(extent_protocol::T_DIR); // T_DIR = 1
   if (root_dir != 1) {
     printf("\tim: error! alloc first inode %d, should be 1\n", root_dir);
     exit(0);
@@ -190,8 +193,6 @@ inode_manager::put_inode(uint32_t inum, struct inode *ino)
   bm->write_block(IBLOCK(inum, bm->sb.nblocks), buf);
 }
 
-#define MIN(a,b) ((a)<(b) ? (a) : (b))
-
 /* Get all the data of a file by inum. 
  * Return alloced data, should be freed by caller. */
 void
@@ -228,7 +229,14 @@ inode_manager::getattr(uint32_t inum, extent_protocol::attr &a)
    * note: get the attributes of inode inum.
    * you can refer to "struct attr" in extent_protocol.h
    */
+  struct inode* ino = get_inode(inum);
   
+  a.atime = ino->atime;
+  a.ctime = ino->ctime;
+  a.mtime = ino->mtime;
+  a.size  = ino->size;
+  a.type  = ino->type;
+
   return;
 }
 
