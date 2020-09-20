@@ -39,6 +39,8 @@ private:
 
 public:
   disk();
+  ~disk() {}
+
   void read_block(uint32_t id, char *buf);
   void write_block(uint32_t id, const char *buf);
 };
@@ -62,6 +64,7 @@ private:
 
 public:
   block_manager();
+  ~block_manager() {}
 
   uint32_t alloc_block();
   void free_block(uint32_t id);
@@ -79,8 +82,11 @@ public:
  */
 #define IPB 1
 
-// Find block which contains inode i
-#define IBLOCK(i, nblocks) ((nblocks) / BPB + (i) / IPB + 3)
+/*
+ * Find block which contains inode i, which start from 1
+ * why 3: super block, inode free bitmap and block bitmap
+ */
+#define IBLOCK(i, nblocks) ((nblocks) / BPB + (i - 1) / IPB + 3)
 
 /*
  * Bitmap bits per block
@@ -88,12 +94,15 @@ public:
  */
 #define BPB (BLOCK_SIZE * 8)
 
-// Block containing bit for block b
+/*
+ * Block containing bit for block b
+ * why 2: super block and inode free bitmap
+ */
 #define BBLOCK(b) ((b) / BPB + 2)
 
-#define NDIRECT 100
-#define NINDIRECT (BLOCK_SIZE / sizeof(uint))
-#define MAXFILE (NDIRECT + NINDIRECT)
+#define NDIRECT 100 // number of direct blocks in one inode
+#define NINDIRECT (BLOCK_SIZE / sizeof(uint)) // number of direct blocks in one indirect block
+#define MAXFILE (NDIRECT + NINDIRECT) // maxium number of direct blocks in one file
 
 typedef struct inode
 {
@@ -116,6 +125,8 @@ private:
 
 public:
   inode_manager();
+  ~inode_manager() {}
+
   uint32_t alloc_inode(uint32_t type);
   void free_inode(uint32_t inum);
   void read_file(uint32_t inum, char **buf, int *size);

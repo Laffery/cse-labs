@@ -1,6 +1,8 @@
 #include "inode_manager.h"
+#include <time.h>
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
+#define FIRST_BLOCK (3 + BLOCK_NUM/BPB + INODE_NUM/IPB)
 
 // disk layer -----------------------------------------
 
@@ -58,16 +60,17 @@ block_manager::alloc_block()
    * note: you should mark the corresponding bit in block bitmap when alloc.
    * you need to think about which block you can start to be allocated.
    */
-  for (blockid_t i = 3; i < BLOCK_NUM; ++i)
+  for (blockid_t i = FIRST_BLOCK; i < BLOCK_NUM; ++i)
   {
     if (using_blocks[i] == 0)
     {
-      using_block[i] = 1;
-      printf("\tbm: allocate a block with id %i", i);     
+      using_blocks[i] = 1;
+      printf("\tbm: allocate a block with id %i\n", i);     
       return i;
     }
   }
 
+  printf("\tbm: error! no free block left to allocate\n");
   return 0;
 }
 
@@ -78,8 +81,15 @@ block_manager::free_block(uint32_t id)
    * your code goes here.
    * note: you should unmark the corresponding bit in the block bitmap when free.
    */
-  using_blocks[id] = 0;
-  return;
+  if (id < FIRST_BLOCK || id >= BLOCK_NUM)
+  {
+    printf("\tbm: error! cannot free with an invalid block id %d\n", id);
+  }
+  else 
+  {
+    using_blocks[id] = 0;
+    printf("\tbm: free block %d\n", id);
+  }
 }
 
 // The layout of disk should be like this:
@@ -114,6 +124,7 @@ block_manager::write_block(uint32_t id, const char *buf)
 
 // inode layer -----------------------------------------
 
+// usable inode block start from 2, 1 is root_dir
 inode_manager::inode_manager()
 {
   bm = new block_manager();
@@ -134,8 +145,28 @@ inode_manager::alloc_inode(uint32_t type)
    * note: the normal inode block should begin from the 2nd inode block.
    * the 1st is used for root_dir, see inode_manager::inode_manager().
    */
-  
-  return 1;
+  for (int i = 1; i <= INODE_NUM; i++)
+  {
+    if (!get_inode(i)) // usable
+    {
+      struct inode ino;
+      ino.type = type;
+      ino.size = 0;
+
+      uint32_t CURR_TIME = (uint32_t)time(NULL);
+      ino.atime = CURR_TIME;
+      ino.ctime = CURR_TIME;
+      ino.mtime = CURR_TIME;
+
+      put_inode(i, &ino);
+
+      printf("\tim: allocate inode %d\n", i);
+      return i;
+    }
+  }
+
+  printf("\tim: error! too full to allocate a new inode\n");
+  return 0;
 }
 
 void
@@ -234,6 +265,12 @@ inode_manager::getattr(uint32_t inum, extent_protocol::attr &a)
    * you can refer to "struct attr" in extent_protocol.h
    */
   struct inode* ino = get_inode(inum);
+
+  if (!ino) 
+  {
+    printf("\tim: error! cannot get attr with an unfound inode id %d\n", inum);
+    return;
+  }
   
   a.atime = ino->atime;
   a.ctime = ino->ctime;
