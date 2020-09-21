@@ -191,7 +191,7 @@ inode_manager::free_inode(uint32_t inum)
 
   else if (!ino)
   {
-    printf("\tim: error! inode %d is already a freed one\n");
+    printf("\tim: error! inode %d is already a freed one\n", inum);
     return;
   }
 
