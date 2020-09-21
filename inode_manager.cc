@@ -184,8 +184,23 @@ inode_manager::free_inode(uint32_t inum)
    * note: you need to check if the inode is already a freed one;
    * if not, clear it, and remember to write back to disk.
    */
+  struct inode *ino = get_inode(inum);
 
-  return;
+  if (inum < 0 || inum >= INODE_NUM)
+    return;
+
+  else if (!ino)
+  {
+    printf("\tim: error! inode %d is already a freed one\n");
+    return;
+  }
+
+  else
+  {
+    ino->type = 0;
+    ino->ctime = (uint32_t)time(NULL);
+    put_inode(inum, ino);
+  }
 }
 
 
@@ -319,7 +334,7 @@ inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
   struct inode *ino = get_inode(inum);
   if (!ino)
   {
-    printf("\tim: error! cannot to read inode %d\n", inum);
+    printf("\tim: error! cannot write to inode %d\n", inum);
     return;
   }
 
@@ -491,6 +506,49 @@ inode_manager::remove_file(uint32_t inum)
    * your code goes here
    * note: you need to consider about both the data block and inode of the file
    */
+  struct inode* ino = get_inode(inum);
+  if (!ino)
+  {
+    printf("\tim: errpr! no inode %d to remove\n", inum);
+    return;
+  }
+
+  int blockNumber = ino->size / BLOCK_SIZE + (ino->size % BLOCK_SIZE > 0);
+
+  /* free data block */
+
+  // only need to free direct blocks
+  if (blockNumber <= NDIRECT)
+  {
+    for (int i = 0; i < blockNumber; ++i)
+    {
+      bm->free_block(ino->blocks[i]);
+    }
+  }
   
-  return;
+  // need to free both direct and indirect blocks
+  else
+  {
+    // free direct blocks
+    for (int i = 0; i < NDIRECT; ++i)
+    {
+      bm->free_block(ino->blocks[i]);
+    }
+
+    // get indirect blocks' id list
+    uint32_t bidList[NINDIRECT];
+    bm->read_block(ino->blocks[NDIRECT], (char *)bidList);
+
+    // free indirect blocks
+    for (int i = 0; i < blockNumber - NDIRECT; ++i)
+    {
+      bm->free_block(bidList[i]);
+    }
+
+    // free indirect blocks table
+    bm->free_block(ino->blocks[NDIRECT]);
+  }
+  
+  free_inode(inum);
+  bm->free_block(IBLOCK(inum, bm->sb.nblocks));
 }
