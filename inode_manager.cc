@@ -32,8 +32,8 @@ disk::read_block(blockid_t id, char *buf)
   }
 
   memcpy(buf, blocks[id], BLOCK_SIZE);
-  // printf("\td: read '%s' from block %d\n", buf, id);
-  cout << "\td: read '" << buf << "' from block " << id << endl;
+  printf("\td: read from block %d\n", id);
+  //cout << "\td: read '" << buf << "' from block " << id << endl;
 }
 
 void
@@ -51,9 +51,9 @@ disk::write_block(blockid_t id, const char *buf)
     return;
   }
 
-  cout << "\td: write data '" << buf << "' to block " << id << endl;
-  // printf("\td: write data '%s' to block %d\n", buf, id);
-  memcpy(blocks[id], buf, MIN(sizeof(buf), BLOCK_SIZE));
+  //cout << "\td: write data '" << buf << "' to block " << id << endl;
+  printf("\td: write to block %d\n", id);
+  memcpy(blocks[id], buf, BLOCK_SIZE);
 }
 
 // block layer -----------------------------------------
@@ -221,6 +221,23 @@ inode_manager::get_inode(uint32_t inum)
 }
 
 void
+print_inode(struct inode *ino)
+{
+  cout << "type : " << ino->type << endl
+       << "size : " << ino->size << endl
+       << "atime: " << ino->atime << endl
+       << "mtime: " << ino->mtime << endl
+       << "ctime: " << ino->ctime << endl;
+
+  for (int i = 0; i < NDIRECT; ++i)
+  {
+      cout << ino->blocks[i] << "  ";
+  }
+
+  cout << endl;
+}
+
+void
 inode_manager::put_inode(uint32_t inum, struct inode *ino)
 {
   char buf[BLOCK_SIZE];
@@ -233,6 +250,7 @@ inode_manager::put_inode(uint32_t inum, struct inode *ino)
   bm->read_block(IBLOCK(inum, bm->sb.nblocks), buf);
   ino_disk = (struct inode*)buf + inum%IPB;
   *ino_disk = *ino;
+  // print_inode(ino);
   bm->write_block(IBLOCK(inum, bm->sb.nblocks), buf);
 }
 
@@ -261,7 +279,7 @@ inode_manager::read_file(uint32_t inum, char **buf_out, int *size)
   // clone direct blocks' data to buffer
   for (int i = 0; i < MIN(blockNumber, NDIRECT); ++i)
   {
-	cout << "\t" << ino->blocks[i] << endl;
+// cout << "\t" << ino->blocks[i] << endl;
     bm->read_block(ino->blocks[i], buf + i * BLOCK_SIZE);
   }
 
@@ -285,7 +303,7 @@ inode_manager::read_file(uint32_t inum, char **buf_out, int *size)
   ino->atime = (uint32_t)time(NULL);
   put_inode(inum, ino);
 
-  printf("\tim: read inode %d\n\tthe data is %s\n", inum, buf);
+  printf("\tim: read inode %d\n", inum);
 }
 
 /* alloc/free blocks if needed */
@@ -431,14 +449,14 @@ inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
   ino->mtime = (uint32_t)time(NULL);
   put_inode(inum, ino);
 
-  for (int i = 0; i < blockNumber; ++i)
-  {
-    cout << ino->blocks[i] << ' ';
-  }
+  //struct inode *pno = get_inode(inum);
+  //print_inode(pno);  
 
-  cout << "\n";
+  // for (int i = 0; i < blockNumber; ++i)
+  //   cout << ino->blocks[i] << ' ' << pno->blocks[i] << ' ';
+  // cout << "\n";
   
-  printf("\tim: write %d blocks data to inode %d\n\tthe data is %s\n", blockNumber, inum, buf_in);
+  printf("\tim: write %d blocks data to inode %d\n", blockNumber, inum);
 }
 
 void
