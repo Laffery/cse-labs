@@ -186,8 +186,11 @@ inode_manager::free_inode(uint32_t inum)
    */
   struct inode *ino = get_inode(inum);
 
-  if (inum < 0 || inum >= INODE_NUM)
+  // inode 0 cannot be freed
+  if (inum <= 0 || inum >= INODE_NUM){
+    printf("\tim: error! cannot free an invalid inode %d\n", inum);
     return;
+  }
 
   else if (!ino)
   {
@@ -198,7 +201,6 @@ inode_manager::free_inode(uint32_t inum)
   else
   {
     ino->type = 0;
-    ino->ctime = (uint32_t)time(NULL);
     put_inode(inum, ino);
   }
 }
@@ -509,7 +511,7 @@ inode_manager::remove_file(uint32_t inum)
   struct inode* ino = get_inode(inum);
   if (!ino)
   {
-    printf("\tim: errpr! no inode %d to remove\n", inum);
+    printf("\tim: error! no inode %d to remove\n", inum);
     return;
   }
 
@@ -551,4 +553,5 @@ inode_manager::remove_file(uint32_t inum)
   
   free_inode(inum);
   bm->free_block(IBLOCK(inum, bm->sb.nblocks));
+  printf("\tim: remove file whose inode is %d\n", inum);
 }
