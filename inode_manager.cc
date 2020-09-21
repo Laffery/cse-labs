@@ -430,6 +430,13 @@ inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
   ino->size = size;
   ino->mtime = (uint32_t)time(NULL);
   put_inode(inum, ino);
+
+  for (int i = 0; i < blockNumber; ++i)
+  {
+    cout << ino->blocks[i] << ' ';
+  }
+
+  cout << "\n";
   
   printf("\tim: write %d blocks data to inode %d\n\tthe data is %s\n", blockNumber, inum, buf_in);
 }
