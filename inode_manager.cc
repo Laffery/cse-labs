@@ -1,5 +1,8 @@
 #include "inode_manager.h"
 #include <time.h>
+#include <iostream>
+
+using namespace std;
 
 #define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define FIRST_BLOCK (3 + BLOCK_NUM/BPB + INODE_NUM/IPB)
@@ -29,6 +32,8 @@ disk::read_block(blockid_t id, char *buf)
   }
 
   memcpy(buf, blocks[id], BLOCK_SIZE);
+  // printf("\td: read '%s' from block %d\n", buf, id);
+  cout << "\td: read '" << buf << "' from block " << id << endl;
 }
 
 void
@@ -46,6 +51,8 @@ disk::write_block(blockid_t id, const char *buf)
     return;
   }
 
+  cout << "\td: write data '" << buf << "' to block " << id << endl;
+  // printf("\td: write data '%s' to block %d\n", buf, id);
   memcpy(blocks[id], buf, MIN(sizeof(buf), BLOCK_SIZE));
 }
 
@@ -254,7 +261,8 @@ inode_manager::read_file(uint32_t inum, char **buf_out, int *size)
   // clone direct blocks' data to buffer
   for (int i = 0; i < MIN(blockNumber, NDIRECT); ++i)
   {
-    bm->read_block(i, buf + i * BLOCK_SIZE);
+	cout << "\t" << ino->blocks[i] << endl;
+    bm->read_block(ino->blocks[i], buf + i * BLOCK_SIZE);
   }
 
   // there is some indirect blocks in this inode
@@ -277,7 +285,7 @@ inode_manager::read_file(uint32_t inum, char **buf_out, int *size)
   ino->atime = (uint32_t)time(NULL);
   put_inode(inum, ino);
 
-  printf("\tim: read inode %d\n", inum);
+  printf("\tim: read inode %d\n\tthe data is %s\n", inum, buf);
 }
 
 /* alloc/free blocks if needed */
@@ -307,7 +315,7 @@ inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
   
   // how many blocks originally does this inode have
   int blockNumOrigin = ino->size / BLOCK_SIZE + (ino->size % BLOCK_SIZE > 0);
-  printf("\tim: blockNumber is %d and blockNumOrigin is %d", blockNumber, blockNumOrigin);
+  printf("\tim: blockNumber is %d and blockNumOrigin is %d\n", blockNumber, blockNumOrigin);
 
   // indirect blocks' id list
   uint32_t bidList[NINDIRECT];
@@ -319,7 +327,7 @@ inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
     // block number to write is less than NDIRECT, just allocate direct blocks directly
     if (blockNumber <= NDIRECT)
     {
-      for (int i = blockNumOrigin; i < NDIRECT; ++i)
+      for (int i = blockNumOrigin; i < blockNumber; ++i)
       {
         ino->blocks[i] = bm->alloc_block();
       }
@@ -401,6 +409,10 @@ inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
   for (int i = 0; i < MIN(blockNumber, NDIRECT); ++i)
   {
     bm->write_block(ino->blocks[i], buf_in + i * BLOCK_SIZE);
+    
+    // char *data = (char *)malloc(16);
+    // bm->read_block(ino->blocks[i] , data);
+
     printf("\tim: inode %d's direct blocks[%d] write file data\n", inum, i);
   }
 
@@ -419,7 +431,7 @@ inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
   ino->mtime = (uint32_t)time(NULL);
   put_inode(inum, ino);
   
-  printf("\tim: write %d blocks data to inode %d\n", blockNumber, inum);
+  printf("\tim: write %d blocks data to inode %d\n\tthe data is %s\n", blockNumber, inum, buf_in);
 }
 
 void
