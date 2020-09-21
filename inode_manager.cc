@@ -307,7 +307,8 @@ inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
   
   // how many blocks originally does this inode have
   int blockNumOrigin = ino->size / BLOCK_SIZE + (ino->size % BLOCK_SIZE > 0);
-  
+  printf("\tim: blockNumber is %d and blockNumOrigin is %d", blockNumber, blockNumOrigin);
+
   // indirect blocks' id list
   uint32_t bidList[NINDIRECT];
   bm->read_block(ino->blocks[NDIRECT], (char *)bidList);
