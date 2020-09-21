@@ -101,7 +101,7 @@ public:
 #define BBLOCK(b) ((b) / BPB + 2)
 
 #define NDIRECT 100 // number of direct blocks in one inode
-#define NINDIRECT (BLOCK_SIZE / sizeof(uint)) // number of direct blocks in one indirect block
+#define NINDIRECT (BLOCK_SIZE / sizeof(uint32_t)) // number of direct blocks in one indirect block
 #define MAXFILE (NDIRECT + NINDIRECT) // maxium number of direct blocks in one file
 
 typedef struct inode
@@ -129,8 +129,8 @@ public:
 
   uint32_t alloc_inode(uint32_t type);
   void free_inode(uint32_t inum);
-  void read_file(uint32_t inum, char **buf, int *size);
-  void write_file(uint32_t inum, const char *buf, int size);
+  void read_file(uint32_t inum, char **buf_out, int *size);
+  void write_file(uint32_t inum, const char *buf_in, int size);
   void remove_file(uint32_t inum);
   void getattr(uint32_t inum, extent_protocol::attr &a);
 };
