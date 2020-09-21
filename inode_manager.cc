@@ -299,7 +299,7 @@ inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
 
   // how many blocks is needed
   int blockNumber = size / BLOCK_SIZE + (size % BLOCK_SIZE > 0);
-  if (blockNumber > MAXFILE)
+  if ((uint32_t)blockNumber > MAXFILE)
   {
     printf("\tim: error! write to many data into inode %d\n", inum);
     return;
@@ -418,7 +418,7 @@ inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
   ino->mtime = (uint32_t)time(NULL);
   put_inode(inum, ino);
   
-  printf("\tim: write to inode %d\n", inum);
+  printf("\tim: write %d blocks data to inode %d\n", blockNumber, inum);
 }
 
 void
