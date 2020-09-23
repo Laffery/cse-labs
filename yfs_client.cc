@@ -355,17 +355,14 @@ yfs_client::read(inum ino, size_t size, off_t off, string &data)
     size_t _size_ = buf.size();
     if (off < 0 || off > (long)_size_)
     {
+        data = "";
         printf("YFS: _read: off %ld is out of range %lu\n", off, _size_);
         return IOERR;
     }
 
-    if (size + off > _size_)
-    {
+    if (size + off > _size_) {
         data = buf.substr(off, _size_ - off);
-    }
-
-    else
-    {
+    } else {
         data = buf.substr(off, size);
     }
 
@@ -386,12 +383,64 @@ yfs_client::write(inum ino, size_t size, off_t off, const char *data,
      * when off > length of original file, fill the holes with '\0'.
      */
     string buf;
+    string add(size, 0);
+    for (size_t i = 0; i < size; ++i)
+        add.at(i) = data[i];
+
     if ((r = ec->get(ino, buf)) != extent_protocol::OK)
     {
         printf("YFS: _write: cannot open file %llu\n", ino);
     }
 
+    size_t _org_file_size_ = buf.size();
+    size_t _max_file_size_ = MAXFILE * BLOCK_SIZE;
 
+    // out of maxium file size
+    if (off >= (long)_max_file_size_)
+    {
+        // fill to maxsize
+        bytes_written = _max_file_size_ - _org_file_size_;
+        buf.insert(_org_file_size_, bytes_written, '\0');
+    }
+
+    else
+    {
+        size_t _new_file_size_ = off + size;
+        if (_new_file_size_ > _max_file_size_)
+        {
+            bytes_written = _max_file_size_ - (off + size);
+            buf.insert(_org_file_size_, bytes_written, '\0');
+            buf += add;
+            bytes_written += size;
+        }
+
+        else if ((unsigned long)off > _org_file_size_)
+        {
+            bytes_written = off - _org_file_size_;
+            buf.insert(_org_file_size_, bytes_written, '\0');
+            buf += add;
+            bytes_written += size;
+        }
+        
+        else if (_new_file_size_ > _org_file_size_)
+        {
+            buf = buf.substr(0, off) + add;
+            bytes_written = size;
+        }
+        
+        else
+        {
+            bytes_written = size;
+            buf.replace(off, size, add);
+        }
+    }
+    
+
+    if ((r = ec->put(ino, buf)) != extent_protocol::OK)
+    {
+        printf("YFS: _write: failed to write back to %llu\n", ino);
+        return r;
+    }
 
     return OK;
 }
