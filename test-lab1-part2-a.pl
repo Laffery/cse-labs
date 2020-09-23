@@ -41,7 +41,7 @@ exit(0);
 sub createone {
     my $name = "file -\n-\t-";
     for(my $i = 0; $i < 40; $i++){
-	$name .= sprintf("%c", ord('a') + int(rand(26)));
+	    $name .= sprintf("%c", ord('a') + int(rand(26)));
     }
     $name .= "-$$-" . $seq;
     $seq = $seq + 1;
@@ -114,11 +114,11 @@ sub livecheck {
     }
     close(F);
     if( ! -f "$dir/$k" ){
-	print STDERR "test-lab1-part2-a: $dir/$k is not of type file\n";
-	exit(1);
+	    print STDERR "test-lab1-part2-a: $dir/$k is not of type file\n";
+	    exit(1);
     }
     if(open(F, ">$dir/$k/xx")){
-	print STDERR "test-lab1-part2-a: $dir/$k acts like a directory, not a file\n";
+	    print STDERR "test-lab1-part2-a: $dir/$k acts like a directory, not a file\n";
         exit(1);
     }
 }

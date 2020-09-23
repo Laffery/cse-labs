@@ -35,41 +35,42 @@ typedef uint32_t blockid_t;
 class disk
 {
 private:
-  unsigned char blocks[BLOCK_NUM][BLOCK_SIZE];
+	unsigned char blocks[BLOCK_NUM][BLOCK_SIZE];
 
 public:
-  disk();
-  ~disk() {}
+	disk();
+	~disk() {}
 
-  void read_block(uint32_t id, char *buf);
-  void write_block(uint32_t id, const char *buf);
+	void read_block(uint32_t id, char *buf);
+	void write_block(uint32_t id, const char *buf);
 };
 
 // block layer -----------------------------------------
 
 typedef struct superblock
 {
-  uint32_t size;
-  uint32_t nblocks;
-  uint32_t ninodes;
+	uint32_t size;
+	uint32_t nblocks;
+	uint32_t ninodes;
 } superblock_t;
 
 class block_manager
 {
 public:
-  struct superblock sb;
+	struct superblock sb;
+
 private:
-  disk *d;
-  std::map<uint32_t, int> using_blocks; // bit map to manage block
+	disk *d;
+	std::map<uint32_t, int> using_blocks; // bit map to manage block
 
 public:
-  block_manager();
-  ~block_manager() {}
+	block_manager();
+	~block_manager() {}
 
-  uint32_t alloc_block();
-  void free_block(uint32_t id);
-  void read_block(uint32_t id, char *buf);
-  void write_block(uint32_t id, const char *buf);
+	uint32_t alloc_block();
+	void free_block(uint32_t id);
+	void read_block(uint32_t id, char *buf);
+	void write_block(uint32_t id, const char *buf);
 };
 
 // inode layer -----------------------------------------
@@ -100,39 +101,46 @@ public:
  */
 #define BBLOCK(b) ((b) / BPB + 2)
 
-#define NDIRECT 100 // number of direct blocks in one inode
+#define NDIRECT 100								  // number of direct blocks in one inode
 #define NINDIRECT (BLOCK_SIZE / sizeof(uint32_t)) // number of direct blocks in one indirect block
-#define MAXFILE (NDIRECT + NINDIRECT) // maxium number of direct blocks in one file
+#define MAXFILE (NDIRECT + NINDIRECT)			  // maxium number of direct blocks in one file
 
 typedef struct inode
 {
-  short type;
-  unsigned int size;
-  unsigned int atime;
-  unsigned int mtime;
-  unsigned int ctime;
-  blockid_t blocks[NDIRECT + 1]; // Data block addresses
+	short type;
+	unsigned int size;
+	unsigned int atime;
+	unsigned int mtime;
+	unsigned int ctime;
+	blockid_t blocks[NDIRECT + 1]; // Data block addresses
 } inode_t;
 
 class inode_manager
 {
 private:
-  block_manager *bm;
+	block_manager *bm;
 
 private:
-  struct inode* get_inode(uint32_t inum);
-  void put_inode(uint32_t inum, struct inode *ino);
+	struct inode *get_inode(uint32_t inum);
+	void put_inode(uint32_t inum, struct inode *ino);
 
 public:
-  inode_manager();
-  ~inode_manager() {}
+	inode_manager();
+	~inode_manager() {}
 
-  uint32_t alloc_inode(uint32_t type);
-  void free_inode(uint32_t inum);
-  void read_file(uint32_t inum, char **buf_out, int *size);
-  void write_file(uint32_t inum, const char *buf_in, int size);
-  void remove_file(uint32_t inum);
-  void getattr(uint32_t inum, extent_protocol::attr &a);
+	uint32_t alloc_inode(uint32_t type);
+	void free_inode(uint32_t inum);
+	void read_file(uint32_t inum, char **buf_out, int *size);
+	void write_file(uint32_t inum, const char *buf_in, int size);
+	void remove_file(uint32_t inum);
+	void getattr(uint32_t inum, extent_protocol::attr &a);
 };
+
+// dir layer ----------------------------------------
+
+// an entry in dir is (inode, filename)
+#define DIR_INODE_LEN 4	 // uint32_t
+#define DIR_FNAME_LEN 60 // maxium value
+#define DIR_ENTRY_LEN (DIR_INODE_LEN + DIR_FNAME_LEN)
 
 #endif
