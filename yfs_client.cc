@@ -66,6 +66,16 @@ yfs_client::i2n(inum inum)
     return ost.str();
 }
 
+string
+yfs_client::entry(const char *name, inum inum)
+{
+    string _name_str_ = filename(name);
+    string _inum_str_ = i2n(inum);
+    size_t _inum_size = _inum_str_.size();
+
+    return _name_str_ + _inum_str_.insert(_inum_size, DIR_INODE_LEN - _inum_size, 0);
+}
+
 bool
 yfs_client::isfile(inum inum)
 {
@@ -80,7 +90,7 @@ yfs_client::isfile(inum inum)
         printf("isfile: %lld is a file\n", inum);
         return true;
     } 
-    printf("isfile: %lld is a dir\n", inum);
+    printf("isfile: %lld is not a file\n", inum);
     return false;
 }
 
@@ -93,8 +103,37 @@ yfs_client::isfile(inum inum)
 bool
 yfs_client::isdir(inum inum)
 {
-    // Oops! is this still correct when you implement symlink?
-    return ! isfile(inum);
+    extent_protocol::attr a;
+
+    if (ec->getattr(inum, a) != extent_protocol::OK) {
+        printf("error getting attr\n");
+        return false;
+    }
+
+    if (a.type == extent_protocol::T_DIR) {
+        printf("isdir: %lld is a dir\n", inum);
+        return true;
+    } 
+    printf("isdir: %lld is not a dir\n", inum);
+    return false;
+}
+
+bool
+yfs_client::issymlink(inum inum)
+{
+    extent_protocol::attr a;
+
+    if (ec->getattr(inum, a) != extent_protocol::OK) {
+        printf("error getting attr\n");
+        return false;
+    }
+
+    if (a.type == extent_protocol::T_LINK) {
+        printf("issymlink: %lld is a symlink\n", inum);
+        return true;
+    } 
+    printf("issymlink: %lld is not a symlink\n", inum);
+    return false;
 }
 
 int
@@ -129,6 +168,22 @@ yfs_client::getdir(inum inum, dirinfo &din)
     return OK;
 }
 
+int
+yfs_client::getsymlink(inum inum, syminfo &sin)
+{
+    printf("YFS: _getsymlink %016llx\n", inum);
+    extent_protocol::attr a;
+    if (ec->getattr(inum, a) != extent_protocol::OK)
+        return IOERR;
+
+    sin.atime = a.atime;
+    sin.mtime = a.mtime;
+    sin.ctime = a.ctime;
+    sin.size = a.size;
+    printf("YFS: _getfile %016llx -> sz %llu\n", inum, sin.size);
+
+    return OK;
+}
 
 #define EXT_RPC(xx) do { \
     if ((xx) != extent_protocol::OK) { \
@@ -182,7 +237,7 @@ yfs_client::setattr(inum ino, size_t size)
 int
 yfs_client::lookup(inum parent, const char *name, bool &found, inum &ino_out)
 {
-    printf("\nYFS: _lookup '%s' in %llu\n", name, parent);
+    printf("YFS: _lookup '%s' in %llu\n", name, parent);
     int r = OK;
     /*
      * TODO: your code goes here.
@@ -225,7 +280,7 @@ yfs_client::lookup(inum parent, const char *name, bool &found, inum &ino_out)
 int
 yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
 {
-    printf("\nYFS: _create '%s' in %llu\n", name, parent);
+    printf("YFS: _create '%s' in %llu\n", name, parent);
     int r = OK;
     /*
      * TODO: your code goes here.
@@ -240,18 +295,16 @@ yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
         return r;
     }
 
-    string _name_str_ = filename(name);
-
     if (found)
     {
-        printf("YFS: _create Error: file '%s' has been existed\n", _name_str_.c_str());
+        printf("YFS: _create Error: file '%s' has been existed\n", filename(name).c_str());
         return EXIST;
     }
 
     // alloc inode for the new file
     if ((r = ec->create(extent_protocol::T_FILE, ino_out)) != extent_protocol::OK)
     {
-        printf("YFS: _create Error: cannot allocate inode for file '%s'\n", _name_str_.c_str());
+        printf("YFS: _create Error: cannot allocate inode for file '%s'\n", filename(name).c_str());
         return r;
     }
     
@@ -263,36 +316,70 @@ yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
         printf("YFS: _create Error: cannot open dir inode %llu\n", parent);
         return r;
     }
-
-    // add entry
-    string _inum_ = i2n(ino_out);
-    string __entry__ = _name_str_ + _inum_.insert(_inum_.size(), DIR_INODE_LEN - _inum_.size(), 0);
-
-    // printf("_name_size_: %lu _name_str %s\n", _name_str_.size(), _name_str_.c_str());
-    // printf("_inum_size_: %lu _inum_str %s\n", _inum_.size(), _inum_.c_str());
-    // printf("_entry_size_: %lu _entry_ %s\n", __entry__.size(), __entry__.c_str());
-
     
     // write back to parent
-    if ((r = ec->put(parent, buf.insert(buf.size(), __entry__))) != extent_protocol::OK)
+    string _entry_;
+    if ((r = ec->put(parent, buf.insert(buf.size(), (_entry_ = entry(name, ino_out))))) != extent_protocol::OK)
     {
-        printf("YFS: _create Error: connot write entry '%s' to dir\n", __entry__.c_str());
+        printf("YFS: _create Error: connot write entry '%s' to dir\n", _entry_.c_str());
         return r;
     }
 
-    printf("\tYFS: _create: create file '%s' with inode %llu in dir\n", _name_str_.c_str(), ino_out);
+    printf("\tYFS: _create: create file '%s' with inode %llu in dir\n", name, ino_out);
     return OK;
 }
 
 int
 yfs_client::mkdir(inum parent, const char *name, mode_t mode, inum &ino_out)
 {
+    printf("YFS: _mkdir '%s' in %llu\n", name, parent);
+    int r = OK;
     /*
      * TODO: your code goes here.
      * note: lookup is what you need to check if directory exist;
      * after create file or dir, you must remember to modify the parent infomation.
      */
+    bool found = false;
+    if ((r = lookup(parent, name, found, ino_out)) != extent_protocol::OK)
+    {
+        printf("YFS: _mkdir: look up failed\n");
+        return r;
+    }
 
+    if (found)
+    {
+        printf("YFS: _create: file '%s' is existed in %llu\n", name, parent);
+        return EXIST;
+    }
+
+    if ((r = ec->create(extent_protocol::T_DIR, ino_out)) != extent_protocol::OK)
+    {
+        printf("YFS: _mkdir: failed to create dir in %llu\n", parent);
+        return r;
+    }
+
+    string buf;
+
+    // get parent dir
+    if ((r = ec->get(parent, buf)) != extent_protocol::OK)
+    {
+        printf("YFS: _mkdir: cannot open dir %llu\n", parent);
+        return r;
+    }
+
+    // add entry in parent dir
+    // string _name_str_ = filename(name);
+    // buf += _name_str_;
+    // buf += i2n(ino_out).insert();
+    buf += entry(name, ino_out);
+
+    if ((r = ec->put(parent, buf)) != extent_protocol::OK)
+    {
+        printf("YFS: _mkdir: failed to write back %llu\n", parent);
+        return r;
+    }
+
+    printf("YFS: _mkdir '%s' with inode %llu in %llu\n", name, ino_out, parent);
     return OK;
 }
 
@@ -366,7 +453,7 @@ yfs_client::read(inum ino, size_t size, off_t off, string &data)
         data = buf.substr(off, size);
     }
 
-    printf("data: %s\n", data.c_str());
+    printf("YFS: _read: data: %s\n", data.c_str());
 
     return OK;
 }
@@ -447,12 +534,113 @@ yfs_client::write(inum ino, size_t size, off_t off, const char *data,
 
 int yfs_client::unlink(inum parent,const char *name)
 {
+    printf("YFS: _unlink '%s' in %llu\n", name, parent);
+    int r = OK;
     /*
      * TODO: your code goes here.
      * note: you should remove the file using ec->remove,
      * and update the parent directory content.
      */
+    inum ino;
+    bool found = false;
+    if ((r = lookup(parent, name, found, ino)) != extent_protocol::OK)
+    {
+        printf("YFS: _unlink: some error in lookup '%s' in %llu\n", name, parent);
+        return r;
+    }
 
+    if (!found)
+    {
+        printf("YFS: _unlink: '%s' is not in %llu\n", name, parent);
+        return NOENT;
+    }
+
+    // remove file
+    if ((r = ec->remove(ino)) != extent_protocol::OK)
+    {
+        printf("YFS: _unlink: failed to remove inode %llu\n", ino);
+        return r;
+    }
+
+    // remove entry in parent dir
+    string buf;
+    if ((r = ec->get(parent, buf)) != extent_protocol::OK)
+    {
+        printf("YFS: _unlink: failed to open %llu\n", parent);
+        return r;
+    }
+
+    string _name_str_ = filename(name);
+    for (size_t i = 0; i < buf.size(); i += DIR_ENTRY_LEN)
+    {
+        if (buf.substr(i, DIR_FNAME_LEN) == _name_str_)
+        {
+            buf.erase(i, DIR_ENTRY_LEN);
+            break;
+        }
+    }
+
+    if ((r = ec->put(parent, buf)) != extent_protocol::OK)
+    {
+        printf("YFS: _unlink: failed to write back %llu\n", parent);
+        return r;
+    }
+
+    printf("YFS: _unlink '%s' in %llu\n", name, parent);
     return OK;
 }
 
+int
+yfs_client::symlink(inum parent, const char *link, inum &ino_out, const char *name)
+{
+    printf("YFS: _symlink(link, name): '%s' '%s' in %llu\n", link, name, parent);
+    int r = OK;
+
+    // create a new inode
+    if ((r = ec->create(extent_protocol::T_LINK, ino_out)) != extent_protocol::OK)
+    {
+        printf("YFS: _symlink: cannot create a new inode\n");
+        return r;
+    }
+
+    // save linked path to inode ino_out
+    if ((r = ec->put(ino_out, string(link))) != extent_protocol::OK)
+    {
+        printf("YFS: _symlink: failed to write link contene\n");
+        return r;
+    }
+
+    string buf;
+    if ((r = ec->get(parent, buf)) != extent_protocol::OK)
+    {
+        printf("YFS: _symlink: cannot open dir %llu\n", parent);
+        return r;
+    }
+
+    buf += entry(name, ino_out);
+
+    if ((r = ec->put(parent, buf)) != extent_protocol::OK)
+    {
+        printf("YFS: _symlink: failed to write back to dir %llu\n", parent);
+        return r;
+    }
+
+    printf("YFS: _symlink: create '%s' link to '%s' in %llu\n", link, name, parent);
+    return OK;
+}
+
+int
+yfs_client::readlink(inum ino, string &data)
+{
+    printf("YFS: _readlink %llu\n", ino);
+    int r = OK;
+
+    if ((r = ec->get(ino, data)) != extent_protocol::OK)
+    {
+        printf("YFS: _readlink: some error in read\n");
+        return r;
+    }
+
+    printf("YFS: _readlink %llu success\n", ino);
+    return OK;
+}

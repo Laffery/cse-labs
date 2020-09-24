@@ -176,30 +176,20 @@ inode_manager::alloc_inode(uint32_t type)
 void inode_manager::free_inode(uint32_t inum)
 {
 	/* 
-   * your code goes here.
-   * note: you need to check if the inode is already a freed one;
-   * if not, clear it, and remember to write back to disk.
-   */
+   	 * your code goes here.
+     * note: you need to check if the inode is already a freed one;
+     * if not, clear it, and remember to write back to disk.
+     */
 	struct inode *ino = get_inode(inum);
 
-	// inode 0 cannot be freed
-	if (inum <= 0 || inum >= INODE_NUM)
-	{
-		printf("\tim: error! cannot free an invalid inode %d\n", inum);
-		return;
-	}
-
-	else if (!ino)
+	if (!ino)
 	{
 		printf("\tim: error! inode %d is already a freed one\n", inum);
 		return;
 	}
 
-	else
-	{
-		ino->type = 0;
-		put_inode(inum, ino);
-	}
+	ino->type = 0;
+	put_inode(inum, ino);
 }
 
 /* 
@@ -465,6 +455,8 @@ void inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
 	// update inode meta data
 	ino->size = size;
 	ino->mtime = (uint32_t)time(NULL);
+	ino->ctime = ino->mtime;
+	ino->atime = ino->mtime;
 	put_inode(inum, ino);
 
 	//struct inode *pno = get_inode(inum);

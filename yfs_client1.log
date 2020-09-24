@@ -1,0 +1,623 @@
+Init yfs client without args
+	im: inode 1 not exist
+FUSE library version: 2.9.4
+unique: 1, opcode: INIT (26), nodeid: 0, insize: 56, pid: 0
+INIT: 7.27
+flags=0x003ffffb
+max_readahead=0x00020000
+   INIT: 7.19
+   flags=0x00000000
+   max_readahead=0x00020000
+   max_write=0x00020000
+   max_background=0
+   congestion_threshold=0
+   unique: 1, success, outsize: 40
+unique: 2, opcode: GETATTR (3), nodeid: 1, insize: 56, pid: 1
+
+FUSE: _getattr 1
+extent_server: getattr 1
+isfile: 1 is not a file
+getattr(ino,isf) 0000000000000001 0
+extent_server: getattr 1
+isfile: 1 is not a file
+extent_server: getattr 1
+isdir: 1 is a dir
+getdir 0000000000000001
+extent_server: getattr 1
+   getattr(a,c,m) -> 1600950727 1600950727 1600950727
+   unique: 2, success, outsize: 120
+unique: 3, opcode: GETATTR (3), nodeid: 1, insize: 56, pid: 1
+
+FUSE: _getattr 1
+extent_server: getattr 1
+isfile: 1 is not a file
+getattr(ino,isf) 0000000000000001 0
+extent_server: getattr 1
+isfile: 1 is not a file
+extent_server: getattr 1
+isdir: 1 is a dir
+getdir 0000000000000001
+extent_server: getattr 1
+   getattr(a,c,m) -> 1600950727 1600950727 1600950727
+   unique: 3, success, outsize: 120
+unique: 4, opcode: LOOKUP (1), nodeid: 1, insize: 46, pid: 2427
+
+FUSE: _lookup 'hosts' in 1
+YFS: _lookup 'hosts' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts' does not exist
+   unique: 4, error: -2 (No such file or directory), outsize: 16
+unique: 5, opcode: LOOKUP (1), nodeid: 1, insize: 46, pid: 2427
+
+FUSE: _lookup 'hosts' in 1
+YFS: _lookup 'hosts' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts' does not exist
+   unique: 5, error: -2 (No such file or directory), outsize: 16
+unique: 6, opcode: LOOKUP (1), nodeid: 1, insize: 54, pid: 2427
+
+FUSE: _lookup 'testhostslink' in 1
+YFS: _lookup 'testhostslink' in 1
+extent_server: get 1
+YFS: _lookup: file 'testhostslink' does not exist
+   unique: 6, error: -2 (No such file or directory), outsize: 16
+unique: 7, opcode: LOOKUP (1), nodeid: 1, insize: 54, pid: 2427
+
+FUSE: _lookup 'testhostslink' in 1
+YFS: _lookup 'testhostslink' in 1
+extent_server: get 1
+YFS: _lookup: file 'testhostslink' does not exist
+   unique: 7, error: -2 (No such file or directory), outsize: 16
+unique: 8, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2427
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' does not exist
+   unique: 8, error: -2 (No such file or directory), outsize: 16
+unique: 9, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2427
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' does not exist
+   unique: 9, error: -2 (No such file or directory), outsize: 16
+unique: 10, opcode: LOOKUP (1), nodeid: 1, insize: 52, pid: 2427
+
+FUSE: _lookup 'hosts_copy2' in 1
+YFS: _lookup 'hosts_copy2' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy2' does not exist
+   unique: 10, error: -2 (No such file or directory), outsize: 16
+unique: 11, opcode: LOOKUP (1), nodeid: 1, insize: 52, pid: 2427
+
+FUSE: _lookup 'hosts_copy2' in 1
+YFS: _lookup 'hosts_copy2' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy2' does not exist
+   unique: 11, error: -2 (No such file or directory), outsize: 16
+unique: 12, opcode: LOOKUP (1), nodeid: 1, insize: 46, pid: 2428
+
+FUSE: _lookup 'hosts' in 1
+YFS: _lookup 'hosts' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts' does not exist
+   unique: 12, error: -2 (No such file or directory), outsize: 16
+unique: 13, opcode: LOOKUP (1), nodeid: 1, insize: 46, pid: 2428
+
+FUSE: _lookup 'hosts' in 1
+YFS: _lookup 'hosts' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts' does not exist
+   unique: 13, error: -2 (No such file or directory), outsize: 16
+unique: 14, opcode: SYMLINK (6), nodeid: 1, insize: 57, pid: 2428
+
+FUSE: _symlink(link, name): '/etc/hosts' 'hosts'
+YFS: _symlink(link, name): '/etc/hosts' 'hosts' in 1
+extent_server: create inode
+	im: inode 2 not exist
+---es: create inode 2
+extent_server: put 2
+extent_server: get 1
+extent_server: put 1
+YFS: _symlink: create '/etc/hosts' link to 'hosts' in 1
+extent_server: getattr 2
+isfile: 2 is not a file
+getattr(ino,isf) 0000000000000002 0
+extent_server: getattr 2
+isfile: 2 is not a file
+extent_server: getattr 2
+isdir: 2 is not a dir
+YFS: _getsymlink 0000000000000002
+extent_server: getattr 2
+YFS: _getfile 0000000000000002 -> sz 10
+   getattr(size) -> 10
+   unique: 14, success, outsize: 144
+FUSE: _symlink success
+unique: 15, opcode: LOOKUP (1), nodeid: 1, insize: 46, pid: 2429
+
+FUSE: _lookup 'hosts' in 1
+YFS: _lookup 'hosts' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts' is found with inode 2
+extent_server: getattr 2
+isfile: 2 is not a file
+getattr(ino,isf) 0000000000000002 0
+extent_server: getattr 2
+isfile: 2 is not a file
+extent_server: getattr 2
+isdir: 2 is not a dir
+YFS: _getsymlink 0000000000000002
+extent_server: getattr 2
+YFS: _getfile 0000000000000002 -> sz 10
+   getattr(size) -> 10
+   unique: 15, success, outsize: 144
+unique: 16, opcode: READLINK (5), nodeid: 2, insize: 40, pid: 2429
+
+FUSE: _readlink 2
+YFS: _readlink 2
+extent_server: get 2
+YFS: _readlink 2 success
+   unique: 16, success, outsize: 26
+unique: 17, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2430
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' does not exist
+   unique: 17, error: -2 (No such file or directory), outsize: 16
+unique: 18, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2430
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' does not exist
+   unique: 18, error: -2 (No such file or directory), outsize: 16
+unique: 19, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2430
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' does not exist
+   unique: 19, error: -2 (No such file or directory), outsize: 16
+unique: 20, opcode: CREATE (35), nodeid: 1, insize: 67, pid: 2430
+
+FUSE: _create hosts_copy
+YFS: _create 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' does not exist
+extent_server: create inode
+	im: inode 3 not exist
+---es: create inode 3
+extent_server: get 1
+extent_server: put 1
+	YFS: _create: create file 'hosts_copy' with inode 3 in dir
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 0
+   getattr(size) -> 0
+   unique: 20, success, outsize: 160
+OK: create returns.
+unique: 21, opcode: GETATTR (3), nodeid: 3, insize: 56, pid: 2430
+
+FUSE: _getattr 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 0
+   getattr(size) -> 0
+   unique: 21, success, outsize: 120
+unique: 22, opcode: GETXATTR (22), nodeid: 3, insize: 68, pid: 2430
+   unique: 22, error: -38 (Function not implemented), outsize: 16
+unique: 23, opcode: WRITE (16), nodeid: 3, insize: 254, pid: 2430
+
+FUSE: _write 3
+YFS: _write 3
+extent_server: get 3
+extent_server: put 3
+   unique: 23, success, outsize: 24
+unique: 24, opcode: FLUSH (25), nodeid: 3, insize: 64, pid: 2430
+   unique: 24, error: -38 (Function not implemented), outsize: 16
+unique: 25, opcode: RELEASE (18), nodeid: 3, insize: 64, pid: 0
+   unique: 25, success, outsize: 16
+unique: 26, opcode: LOOKUP (1), nodeid: 1, insize: 54, pid: 2431
+
+FUSE: _lookup 'testhostslink' in 1
+YFS: _lookup 'testhostslink' in 1
+extent_server: get 1
+YFS: _lookup: file 'testhostslink' does not exist
+   unique: 26, error: -2 (No such file or directory), outsize: 16
+unique: 27, opcode: LOOKUP (1), nodeid: 1, insize: 54, pid: 2431
+
+FUSE: _lookup 'testhostslink' in 1
+YFS: _lookup 'testhostslink' in 1
+extent_server: get 1
+YFS: _lookup: file 'testhostslink' does not exist
+   unique: 27, error: -2 (No such file or directory), outsize: 16
+unique: 28, opcode: SYMLINK (6), nodeid: 1, insize: 65, pid: 2431
+
+FUSE: _symlink(link, name): 'hosts_copy' 'testhostslink'
+YFS: _symlink(link, name): 'hosts_copy' 'testhostslink' in 1
+extent_server: create inode
+	im: inode 4 not exist
+---es: create inode 4
+extent_server: put 4
+extent_server: get 1
+extent_server: put 1
+YFS: _symlink: create 'hosts_copy' link to 'testhostslink' in 1
+extent_server: getattr 4
+isfile: 4 is not a file
+getattr(ino,isf) 0000000000000004 0
+extent_server: getattr 4
+isfile: 4 is not a file
+extent_server: getattr 4
+isdir: 4 is not a dir
+YFS: _getsymlink 0000000000000004
+extent_server: getattr 4
+YFS: _getfile 0000000000000004 -> sz 10
+   getattr(size) -> 10
+   unique: 28, success, outsize: 144
+FUSE: _symlink success
+unique: 29, opcode: LOOKUP (1), nodeid: 1, insize: 54, pid: 2432
+
+FUSE: _lookup 'testhostslink' in 1
+YFS: _lookup 'testhostslink' in 1
+extent_server: get 1
+YFS: _lookup: file 'testhostslink' is found with inode 4
+extent_server: getattr 4
+isfile: 4 is not a file
+getattr(ino,isf) 0000000000000004 0
+extent_server: getattr 4
+isfile: 4 is not a file
+extent_server: getattr 4
+isdir: 4 is not a dir
+YFS: _getsymlink 0000000000000004
+extent_server: getattr 4
+YFS: _getfile 0000000000000004 -> sz 10
+   getattr(size) -> 10
+   unique: 29, success, outsize: 144
+unique: 30, opcode: READLINK (5), nodeid: 4, insize: 40, pid: 2432
+
+FUSE: _readlink 4
+YFS: _readlink 4
+extent_server: get 4
+YFS: _readlink 4 success
+   unique: 30, success, outsize: 26
+unique: 31, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2432
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' is found with inode 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 174
+   getattr(size) -> 174
+   unique: 31, success, outsize: 144
+unique: 32, opcode: GETATTR (3), nodeid: 3, insize: 56, pid: 2432
+
+FUSE: _getattr 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 174
+   getattr(size) -> 174
+   unique: 32, success, outsize: 120
+unique: 33, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2432
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' is found with inode 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 174
+   getattr(size) -> 174
+   unique: 33, success, outsize: 144
+unique: 34, opcode: GETATTR (3), nodeid: 3, insize: 56, pid: 2432
+
+FUSE: _getattr 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 174
+   getattr(size) -> 174
+   unique: 34, success, outsize: 120
+unique: 35, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2433
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' is found with inode 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 174
+   getattr(size) -> 174
+   unique: 35, success, outsize: 144
+unique: 36, opcode: GETATTR (3), nodeid: 3, insize: 56, pid: 2433
+
+FUSE: _getattr 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 174
+   getattr(size) -> 174
+   unique: 36, success, outsize: 120
+unique: 37, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2433
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' is found with inode 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 174
+   getattr(size) -> 174
+   unique: 37, success, outsize: 144
+unique: 38, opcode: GETATTR (3), nodeid: 3, insize: 56, pid: 2433
+
+FUSE: _getattr 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 174
+   getattr(size) -> 174
+   unique: 38, success, outsize: 120
+unique: 39, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2433
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' is found with inode 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 174
+   getattr(size) -> 174
+   unique: 39, success, outsize: 144
+unique: 40, opcode: ACCESS (34), nodeid: 3, insize: 48, pid: 2433
+   unique: 40, error: -38 (Function not implemented), outsize: 16
+unique: 41, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2433
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' is found with inode 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 174
+   getattr(size) -> 174
+   unique: 41, success, outsize: 144
+unique: 42, opcode: UNLINK (10), nodeid: 1, insize: 51, pid: 2433
+
+FUSE: _unlink
+YFS: _unlink 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' is found with inode 3
+extent_server: write 3
+	bm: error! cannot free with an invalid block id 13
+extent_server: get 1
+extent_server: put 1
+YFS: _unlink 'hosts_copy' in 1
+   unique: 42, success, outsize: 16
+unique: 43, opcode: FORGET (2), nodeid: 3, insize: 48, pid: 0
+unique: 44, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2434
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' does not exist
+   unique: 44, error: -2 (No such file or directory), outsize: 16
+unique: 45, opcode: CREATE (35), nodeid: 1, insize: 67, pid: 2434
+
+FUSE: _create hosts_copy
+YFS: _create 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' does not exist
+extent_server: create inode
+	im: inode 3 not exist
+---es: create inode 3
+extent_server: get 1
+extent_server: put 1
+	YFS: _create: create file 'hosts_copy' with inode 3 in dir
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 0
+   getattr(size) -> 0
+   unique: 45, success, outsize: 160
+OK: create returns.
+unique: 46, opcode: SETATTR (4), nodeid: 3, insize: 128, pid: 2434
+
+FUSE: _setattr 0x1b0
+   unique: 46, error: -38 (Function not implemented), outsize: 16
+unique: 47, opcode: SETATTR (4), nodeid: 3, insize: 128, pid: 2434
+
+FUSE: _setattr 0x1b0
+   unique: 47, error: -38 (Function not implemented), outsize: 16
+unique: 48, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2434
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' is found with inode 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 0
+   getattr(size) -> 0
+   unique: 48, success, outsize: 144
+unique: 49, opcode: SETATTR (4), nodeid: 3, insize: 128, pid: 2434
+
+FUSE: _setattr 0x1b0
+   unique: 49, error: -38 (Function not implemented), outsize: 16
+unique: 50, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2434
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' is found with inode 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 0
+   getattr(size) -> 0
+   unique: 50, success, outsize: 144
+unique: 51, opcode: SETATTR (4), nodeid: 3, insize: 128, pid: 2434
+
+FUSE: _setattr 0x1b0
+   unique: 51, error: -38 (Function not implemented), outsize: 16
+unique: 52, opcode: RELEASE (18), nodeid: 3, insize: 64, pid: 0
+   unique: 52, success, outsize: 16
+unique: 53, opcode: LOOKUP (1), nodeid: 1, insize: 54, pid: 2435
+
+FUSE: _lookup 'testhostslink' in 1
+YFS: _lookup 'testhostslink' in 1
+extent_server: get 1
+YFS: _lookup: file 'testhostslink' is found with inode 4
+extent_server: getattr 4
+isfile: 4 is not a file
+getattr(ino,isf) 0000000000000004 0
+extent_server: getattr 4
+isfile: 4 is not a file
+extent_server: getattr 4
+isdir: 4 is not a dir
+YFS: _getsymlink 0000000000000004
+extent_server: getattr 4
+YFS: _getfile 0000000000000004 -> sz 10
+   getattr(size) -> 10
+   unique: 53, success, outsize: 144
+unique: 54, opcode: READLINK (5), nodeid: 4, insize: 40, pid: 2435
+
+FUSE: _readlink 4
+YFS: _readlink 4
+extent_server: get 4
+YFS: _readlink 4 success
+   unique: 54, success, outsize: 26
+unique: 55, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2435
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' is found with inode 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 0
+   getattr(size) -> 0
+   unique: 55, success, outsize: 144
+unique: 56, opcode: GETATTR (3), nodeid: 3, insize: 56, pid: 2435
+
+FUSE: _getattr 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 0
+   getattr(size) -> 0
+   unique: 56, success, outsize: 120
+unique: 57, opcode: LOOKUP (1), nodeid: 1, insize: 51, pid: 2435
+
+FUSE: _lookup 'hosts_copy' in 1
+YFS: _lookup 'hosts_copy' in 1
+extent_server: get 1
+YFS: _lookup: file 'hosts_copy' is found with inode 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 0
+   getattr(size) -> 0
+   unique: 57, success, outsize: 144
+unique: 58, opcode: GETATTR (3), nodeid: 3, insize: 56, pid: 2435
+
+FUSE: _getattr 3
+extent_server: getattr 3
+isfile: 3 is a file
+getattr(ino,isf) 0000000000000003 1
+extent_server: getattr 3
+isfile: 3 is a file
+YFS: _getfile 0000000000000003
+extent_server: getattr 3
+YFS: _getfile 0000000000000003 -> sz 0
+   getattr(size) -> 0
+   unique: 58, success, outsize: 120

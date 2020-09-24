@@ -58,6 +58,14 @@ public:
 		unsigned long ctime;
 	};
 
+	struct syminfo
+	{
+		unsigned long long size;
+		unsigned long atime;
+		unsigned long mtime;
+		unsigned long ctime;
+	};
+
 	struct dirent
 	{
 		string name;
@@ -68,6 +76,7 @@ private:
 	static string filename(const char *);
 	static inum n2i(string);
 	static string i2n(inum);
+	static string entry(const char *, inum);
 
 public:
 	yfs_client();
@@ -75,9 +84,11 @@ public:
 
 	bool isfile(inum);
 	bool isdir(inum);
+	bool issymlink(inum);
 
 	int getfile(inum, fileinfo &);
 	int getdir(inum, dirinfo &);
+	int getsymlink(inum, syminfo &);
 
 	int setattr(inum, size_t);
 	int lookup(inum, const char *, bool &, inum &);
@@ -89,6 +100,8 @@ public:
 	int mkdir(inum, const char *, mode_t, inum &);
 
 	/* you may need to add symbolic link related methods here */
+	int symlink(inum, const char *, inum &, const char *);
+	int readlink(inum, string &);
 };
 
 #endif
