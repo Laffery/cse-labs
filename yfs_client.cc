@@ -55,12 +55,6 @@ yfs_client::entry(const char *name, inum inum)
     string _inum_str_ = i2n(inum);
     size_t _inum_size_ = _inum_str_.size();
 
-    cout << _name_str_ << " " << _inum_str_ << endl;
-
-    cout << _name_str_.size() << ' ' << _inum_size_ << endl;
-
-    cout << "here10\n";
-
     return _name_str_ + _inum_str_.insert(_inum_size_, DIR_INODE_LEN - _inum_size_, 0);
 }
 
@@ -69,16 +63,19 @@ yfs_client::isfile(inum inum)
 {
     extent_protocol::attr a;
 
-    if (ec->getattr(inum, a) != extent_protocol::OK) {
+    if (ec->getattr(inum, a) != extent_protocol::OK)
+    {
         printf("error getting attr\n");
         return false;
     }
 
-    if (a.type == extent_protocol::T_FILE) {
+    if (a.type == extent_protocol::T_FILE)
+    {
         printf("isfile: %lld is a file\n", inum);
         return true;
-    } 
-    printf("isfile: %lld is a dir\n", inum);
+    }
+
+    printf("isfile: %lld is not a file\n", inum);
     return false;
 }
 
@@ -87,12 +84,14 @@ yfs_client::isdir(inum inum)
 {
     extent_protocol::attr a;
 
-    if (ec->getattr(inum, a) != extent_protocol::OK) {
+    if (ec->getattr(inum, a) != extent_protocol::OK)
+    {
         printf("error getting attr\n");
         return false;
     }
 
-    if (a.type == extent_protocol::T_DIR) {
+    if (a.type == extent_protocol::T_DIR)
+    {
         printf("isdir: %lld is a dir\n", inum);
         return true;
     } 
@@ -105,12 +104,14 @@ yfs_client::issymlink(inum inum)
 {
     extent_protocol::attr a;
 
-    if (ec->getattr(inum, a) != extent_protocol::OK) {
+    if (ec->getattr(inum, a) != extent_protocol::OK)
+    {
         printf("error getting attr\n");
         return false;
     }
 
-    if (a.type == extent_protocol::T_SYMLINK) {
+    if (a.type == extent_protocol::T_SYMLINK)
+    {
         printf("issymlink: %lld is a symlink\n", inum);
         return true;
     } 
@@ -247,16 +248,12 @@ yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
         return EXIST;
     }
 
-    cout << "here1\n";
-
     // alloc inode for the new file
     if ((r = ec->create(extent_protocol::T_FILE, ino_out)) != extent_protocol::OK)
     {
         printf("YFS: _create Error: cannot allocate inode for file '%s'\n", filename(name).c_str());
         return r;
     }
-    
-    cout << "here2\n";
 
     /* add entry to the dir */
     // get dir
@@ -267,13 +264,10 @@ yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
         return r;
     }
     
-    cout << "here3\n";
-
     // write back to parent
     string _entry_;
     if ((r = ec->put(parent, buf.insert(buf.size(), (_entry_ = entry(name, ino_out))))) != extent_protocol::OK)
     {
-        cout << "here4\n";
         printf("YFS: _create Error: connot write entry '%s' to dir\n", _entry_.c_str());
         return r;
     }

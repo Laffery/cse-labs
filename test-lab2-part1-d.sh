@@ -29,7 +29,7 @@ then
 fi
 
 rm $DIR/hosts_copy 
-touch $DIR/hosts_copy
+touch $DIR/hosts_copy >/dev/null 2>&1
 diff $DIR/testhostslink $DIR/hosts_copy >/dev/null 2>&1
 if [ $? -ne 0 ];
 then 
