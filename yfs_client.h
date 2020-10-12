@@ -62,6 +62,9 @@ private:
 	static string i2n(inum);
 	static string entry(const char *, inum);
 
+	void LOCK(inum);
+	void UNLOCK(inum);
+
 public:
 	yfs_client(string, string);
 

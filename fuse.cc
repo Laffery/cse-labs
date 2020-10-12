@@ -46,7 +46,6 @@ getattr(yfs_client::inum inum, struct stat &st)
     bzero(&st, sizeof(st));
 
     st.st_ino = inum;
-    printf("getattr %016llx %d\n", inum, yfs->isfile(inum));
     if (yfs->isfile(inum))
     {
         yfs_client::fileinfo info;

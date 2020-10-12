@@ -8,17 +8,21 @@
 #include "rpc.h"
 #include <vector>
 
+using namespace std;
+
 // Client interface to the lock server
-class lock_client {
- protected:
-  rpcc *cl;
- public:
-  lock_client(std::string d);
-  virtual ~lock_client() {};
-  virtual lock_protocol::status acquire(lock_protocol::lockid_t);
-  virtual lock_protocol::status release(lock_protocol::lockid_t);
-  virtual lock_protocol::status stat(lock_protocol::lockid_t);
+class lock_client
+{
+protected:
+	rpcc *cl;
+
+public:
+	lock_client(string d);
+	virtual ~lock_client() {}
+
+	virtual lock_protocol::status acquire(lock_protocol::lockid_t);
+	virtual lock_protocol::status release(lock_protocol::lockid_t);
+	virtual lock_protocol::status stat(lock_protocol::lockid_t);
 };
 
-
-#endif 
+#endif
