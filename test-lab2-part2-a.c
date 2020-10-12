@@ -256,6 +256,8 @@ createn(const char *d, const char *prefix, int nf, bool possible_dup)
               n, strerror(errno));
       exit(1);
     }
+        
+    // fprintf(stderr, "%s/%s-%d\n", d, prefix, i);
   }
 }
 
@@ -321,6 +323,8 @@ compar(const void *xa, const void *xb)
 void
 dircheck(const char *d, int nf)
 {
+
+  fprintf(stderr, "dircheckn:\n");
   DIR *dp;
   struct dirent *e;
   char *names[1000];
@@ -336,6 +340,7 @@ dircheck(const char *d, int nf)
       if(nnames >= sizeof(names)/sizeof(names[0])){
         fprintf(stderr, "warning: too many files in %s\n", d);
       }
+      // fprintf(stderr, "%s/%s got\n", d, e->d_name);
       names[nnames] = (char *) malloc(strlen(e->d_name) + 1);
       strcpy(names[nnames], e->d_name);
       nnames++;
@@ -410,7 +415,7 @@ main(int argc, char *argv[])
   for(i = 0; i < sizeof(huge)-1; i++)
     huge[i] = '0';
 
-  printf("Concurrent creates: ");
+  printf("Concurrent creates: \n");
   pid = fork();
   if(pid < 0){
     perror("test-lab2-part2-a: fork");
@@ -430,7 +435,7 @@ main(int argc, char *argv[])
   unlinkn(d1, "yy", 10);
   printf("OK\n");
 
-  printf("Concurrent creates of the same file: ");
+  printf("Concurrent creates of the same file: \n");
   pid = fork();
   if(pid < 0){
     perror("test-lab2-part2-a: fork");
@@ -449,7 +454,7 @@ main(int argc, char *argv[])
   unlinkn(d1, "zz", 10);
   printf("OK\n");
 
-  printf("Concurrent create/delete: ");
+  printf("Concurrent create/delete: \n");
   createn(d1, "x1", 5, false);
   createn(d2, "x2", 5, false);
   pid = fork();
@@ -470,7 +475,7 @@ main(int argc, char *argv[])
   dircheck(d1, 0);
   printf("OK\n");
 
-  printf("Concurrent creates, same file, same server: ");
+  printf("Concurrent creates, same file, same server: \n");
   pid = fork();
   if(pid < 0){
     perror("test-lab2-part2-a: fork");
@@ -488,7 +493,7 @@ main(int argc, char *argv[])
   unlinkn(d1, "zz", 10);
   printf("OK\n");
 
-  printf("Concurrent writes to different parts of same file: ");
+  printf("Concurrent writes to different parts of same file: \n");
   create1(d1, "www", huge);
   pid = fork();
   if(pid < 0){
