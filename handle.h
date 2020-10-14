@@ -24,10 +24,12 @@
 #define handle_h
 
 #include <string>
+#include <map>
 #include <vector>
 #include "rpc.h"
 
-struct hinfo {
+struct hinfo
+{
   rpcc *cl;
   int refcnt;
   bool del;
@@ -35,10 +37,12 @@ struct hinfo {
   pthread_mutex_t cl_mutex;
 };
 
-class handle {
- private:
+class handle
+{
+private:
   struct hinfo *h;
- public:
+
+public:
   handle(std::string m);
   ~handle();
   /* safebind will try to bind with the rpc server on the first call.
@@ -62,11 +66,13 @@ class handle {
   rpcc *safebind();
 };
 
-class handle_mgr {
- private:
+class handle_mgr
+{
+private:
   pthread_mutex_t handle_mutex;
   std::map<std::string, struct hinfo *> hmap;
- public:
+
+public:
   handle_mgr();
   struct hinfo *get_handle(std::string m);
   void done_handle(struct hinfo *h);

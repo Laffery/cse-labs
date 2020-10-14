@@ -13,12 +13,13 @@
 #include <stdio.h>
 #include "lang/verify.h"
 #include <unistd.h>
+
 // must be >= 2
 int nt = 6; //XXX: lab1's rpc handlers are blocking. Since rpcs uses a thread pool of 10 threads, we cannot test more than 10 blocking rpc.
 std::string dst;
 // Lab2: Use lock_client_cache when you test lock_cache
-lock_client **lc = new lock_client * [nt];
-// lock_client_cache **lc = new lock_client_cache * [nt];
+// lock_client **lc = new lock_client * [nt];
+lock_client_cache **lc = new lock_client_cache * [nt];
 lock_protocol::lockid_t a = 1;
 lock_protocol::lockid_t b = 2;
 lock_protocol::lockid_t c = 3;
@@ -37,6 +38,8 @@ check_grant(lock_protocol::lockid_t lid)
   if(ct[x] != 0){
     fprintf(stderr, "error: server granted %016llx twice\n", lid);
     fprintf(stdout, "error: server granted %016llx twice\n", lid);
+    for (int i = 0; i < nt; ++i)
+      fprintf(stdout, "client %d  %s\t%016llx\t%s\n", i, lc[i]->getId().c_str(), lid, lc[i]->getStat(lid).c_str());
     exit(1);
   }
   ct[x] += 1;
@@ -58,6 +61,7 @@ void
 test1(void)
 {
     printf ("acquire a release a acquire a release a\n");
+    // printf ("test1: acquire a release a acquire a release a\n");
     lc[0]->acquire(a);
     check_grant(a);
     lc[0]->release(a);
@@ -68,6 +72,8 @@ test1(void)
     check_release(a);
 
     printf ("acquire a acquire b release b release a\n");
+
+    // printf ("test1: acquire a acquire b release b release a\n");
     lc[0]->acquire(a);
     check_grant(a);
     lc[0]->acquire(b);
@@ -76,6 +82,8 @@ test1(void)
     check_release(b);
     lc[0]->release(a);
     check_release(a);
+
+    printf("test1: pased\n");
 }
 
 void *
@@ -84,6 +92,7 @@ test2(void *x)
   int i = * (int *) x;
 
   printf ("test2: client %d acquire a release a\n", i);
+  // printf ("test2: client %d acquire a release a\ntest2: client %d acquire a\n", i, i);
   lc[i]->acquire(a);
   printf ("test2: client %d acquire done\n", i);
   check_grant(a);
@@ -118,11 +127,16 @@ test4(void *x)
 
   printf ("test4: thread %d acquire a release a concurrent; same clnt\n", i);
   for (int j = 0; j < 10; j++) {
+    // printf ("test4-%d-%d: start\n", i, j);
     lc[0]->acquire(a);
+    // lc[0]->ACQUIRE(a, i);
     check_grant(a);
     printf ("test4: thread %d on client 0 got lock\n", i);
+    // printf ("test4-%d-%d: thread %d on client 0 got lock\n", i, j, i);
     check_release(a);
     lc[0]->release(a);
+    // lc[0]->RELEASE(a, i);
+    // printf ("test4-%d-%d: thread %d on client 0 release lock\n", i, j, i);
   }
   return 0;
 }
@@ -176,9 +190,10 @@ main(int argc, char *argv[])
     VERIFY(pthread_mutex_init(&count_mutex, NULL) == 0);
     printf("lock client\n");
     // Lab2: Use lock_client_cache when you test lock_cache
-    for (int i = 0; i < nt; i++) lc[i] = new lock_client(dst);
-    // for (int i = 0; i < nt; i++) lc[i] = new lock_client_cache(dst);
-
+    // for (int i = 0; i < nt; i++) lc[i] = new lock_client(dst);
+    for (int i = 0; i < nt; i++) lc[i] = new lock_client_cache(dst);
+    // for (int i = 0; i < nt; i++) { fprintf(stderr, "create lock_client %d\n", i); lc[i] = new lock_client(dst); }
+    // for (int i = 0; i < nt; i++) { fprintf(stderr, "create lock_client_cache %d", i); lc[i] = new lock_client_cache(dst);  fprintf(stderr, "\t%s\n", lc[i]->getId().c_str()); }
     if(!test || test == 1){
       test1();
     }

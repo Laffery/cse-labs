@@ -37,9 +37,23 @@ public:
 	enum xxstatus
 	{
 		OK,
-		RPCERR
+		RETRY,
+		RPCERR,
+		NOENT,
+		IOERR,
+		REVOKE
+	};
+	enum client_status
+	{
+		NONE, 
+		FREE, 
+		LOCKED, 
+		ACQUIRING, 
+		RELEASING,
+		XNULL
 	};
 	typedef int status;
+	typedef unsigned long long lockid_t;
 	enum rpc_numbers
 	{
 		revoke = 0x8001,
