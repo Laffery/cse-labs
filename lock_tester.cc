@@ -39,7 +39,8 @@ check_grant(lock_protocol::lockid_t lid)
     fprintf(stderr, "error: server granted %016llx twice\n", lid);
     fprintf(stdout, "error: server granted %016llx twice\n", lid);
     for (int i = 0; i < nt; ++i)
-      fprintf(stdout, "client %d  %s\t%016llx\t%s\n", i, lc[i]->getId().c_str(), lid, lc[i]->getStat(lid).c_str());
+      fprintf(stdout, "client %d\t%016llx\n", i, lid);
+      // fprintf(stdout, "client %d  %s\t%016llx\t%s\n", i, lc[i]->getId().c_str(), lid, lc[i]->getStat(lid).c_str());
     exit(1);
   }
   ct[x] += 1;
@@ -129,13 +130,11 @@ test4(void *x)
   for (int j = 0; j < 10; j++) {
     // printf ("test4-%d-%d: start\n", i, j);
     lc[0]->acquire(a);
-    // lc[0]->ACQUIRE(a, i);
     check_grant(a);
     printf ("test4: thread %d on client 0 got lock\n", i);
     // printf ("test4-%d-%d: thread %d on client 0 got lock\n", i, j, i);
     check_release(a);
     lc[0]->release(a);
-    // lc[0]->RELEASE(a, i);
     // printf ("test4-%d-%d: thread %d on client 0 release lock\n", i, j, i);
   }
   return 0;

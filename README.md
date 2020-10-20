@@ -467,6 +467,30 @@ test4-0-9: thread 0 on client 0 release lock
 
 如上，线程 1 调用了但是不执行，原因在于 clt0 thread0 release 后，thread 还处于 cond_wait，需要使用 pthread_cond_signal(&(locks_cond[lid])) 唤醒
 
+然后我们比较前后的 RPC 数量
+
+> export RPC_LOSSY = 5
+>
+> export RPC_COUNT = 25
+
+然后运行test-lab2-part3-b
+
+- [无 cache](./test-lab2-part3-b.log) 大约为2800
+- 有 cache
+
+```log
+RPC STATS: 1:2 7001:20 7002:3
+RPC STATS: 1:2 7001:45 7002:3
+RPC STATS: 1:2 7001:70 7002:3
+RPC STATS: 1:2 7001:95 7002:3
+RPC STATS: 1:2 7001:120 7002:3
+RPC STATS: 1:2 7001:145 7002:3
+RPC STATS: 1:2 7001:170 7002:3
+RPC STATS: 1:2 7001:195 7002:3
+```
+
+基本满足性能提升的要求
+
 ## passed all
 
 part3 最后成功的输出在 [test-lab2-part3.out](./test-lab2-part3.out) 中

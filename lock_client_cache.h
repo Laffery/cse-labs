@@ -25,6 +25,30 @@ public:
 	virtual ~lock_release_user(){};
 };
 
+/*
+ * Class that keep information of a lock kept in this client, 
+ * including status of lock in this client cache, condition 
+ * variable and a boolean flag which means whether the lock 
+ * has received REVOKE from server.
+ */
+class lock_info
+{
+public:
+	rlock_protocol::client_status status;
+	pthread_cond_t cond;
+	bool revoked;
+
+public: 
+	lock_info()
+	{
+		status = rlock_protocol::NONE;
+		pthread_cond_init(&cond, NULL);
+		revoked = false;
+	}
+
+	~lock_info() {}
+};
+
 class lock_client_cache : public lock_client
 {
 private:
@@ -33,45 +57,12 @@ private:
 	string hostname;
 	string id;
 
-/*
-  enum client_status { NONE=10, FREE, LOCKED, ACQUIRING, RELEASING };
-  std::map<lock_protocol::lockid_t, client_status> lock_keeper;
-  std::map<lock_protocol::lockid_t, pthread_cond_t> lock_manager;
-  pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
-  std::map<lock_protocol::lockid_t, bool> revoke_has_arrived;
- */
-
 private:
-	map<rlock_protocol::lockid_t, rlock_protocol::client_status> locks_clstatus;
-	map<rlock_protocol::lockid_t, pthread_cond_t> locks_cond;
-	map<rlock_protocol::lockid_t, bool> locks_revoke;
+	map<rlock_protocol::lockid_t, lock_info *> client_locks;
 	pthread_mutex_t mutex;
 
 public:
 	string getId() { return id; }
-	string getStat(lock_protocol::lockid_t lid)
-	{
-		rlock_protocol::client_status stat = rlock_protocol::XNULL;
-		if (locks_clstatus.find(lid) != locks_clstatus.end())
-			stat = locks_clstatus[lid];
-		switch (stat)
-		{
-		case rlock_protocol::NONE:
-			return "NONE";
-		case rlock_protocol::ACQUIRING:
-			return "ACQUIRING";
-		case rlock_protocol::LOCKED:
-			return "LOCKED";
-		case rlock_protocol::RELEASING:
-			return "RELEASING";
-		case rlock_protocol::FREE:
-			return "FREE";
-		default:
-			return "NULL";
-		}
-	}
-	lock_protocol::status ACQUIRE(lock_protocol::lockid_t, int);
-	lock_protocol::status RELEASE(lock_protocol::lockid_t, int);
 
 	static int last_port;
 	lock_client_cache(string xdst, class lock_release_user *l = 0);
