@@ -20,13 +20,13 @@ void disk::read_block(blockid_t id, char *buf)
 {
 	if (id < 0 || id >= BLOCK_NUM)
 	{
-		printf("\td: error! cannot read block with invalid id %d\n", id);
+		// printf("\td: error! cannot read block with invalid id %d\n", id);
 		return;
 	}
 
 	if (buf == NULL)
 	{
-		printf("\td: error! cannot write to a null ptr *buf\n");
+		// printf("\td: error! cannot write to a null ptr *buf\n");
 		return;
 	}
 
@@ -39,13 +39,13 @@ void disk::write_block(blockid_t id, const char *buf)
 {
 	if (id < 0 || id >= BLOCK_NUM)
 	{
-		printf("\td: error! cannot write to block with invalid id %d\n", id);
+		// printf("\td: error! cannot write to block with invalid id %d\n", id);
 		return;
 	}
 
 	if (buf == NULL)
 	{
-		printf("\td: error! cannot read from a null ptr *buf\n");
+		// printf("\td: error! cannot read from a null ptr *buf\n");
 		return;
 	}
 
@@ -75,7 +75,7 @@ block_manager::alloc_block()
 		}
 	}
 
-	printf("\tbm: error! no free block left to allocate\n");
+	// printf("\tbm: error! no free block left to allocate\n");
 	return 0;
 }
 
@@ -87,7 +87,8 @@ void block_manager::free_block(uint32_t id)
    */
 	if (id < FIRST_BLOCK || id >= BLOCK_NUM)
 	{
-		printf("\tbm: error! cannot free with an invalid block id %d\n", id);
+		// printf("\tbm: error! cannot free with an invalid block id %d\n", id);
+		return;
 	}
 	else
 	{
@@ -133,7 +134,7 @@ inode_manager::inode_manager()
 	uint32_t root_dir = alloc_inode(extent_protocol::T_DIR); // T_DIR = 1
 	if (root_dir != 1)
 	{
-		printf("\tim: error! alloc first inode %d, should be 1\n", root_dir);
+		// printf("\tim: error! alloc first inode %d, should be 1\n", root_dir);
 		exit(0);
 	}
 }
@@ -169,7 +170,7 @@ inode_manager::alloc_inode(uint32_t type)
 		}
 	}
 
-	printf("\tim: error! too full to allocate a new inode\n");
+	// printf("\tim: error! too full to allocate a new inode\n");
 	return 0;
 }
 
@@ -184,7 +185,7 @@ void inode_manager::free_inode(uint32_t inum)
 
 	if (!ino)
 	{
-		printf("\tim: error! inode %d is already a freed one\n", inum);
+		// printf("\tim: error! inode %d is already a freed one\n", inum);
 		return;
 	}
 
@@ -206,7 +207,7 @@ inode_manager::get_inode(uint32_t inum)
 
 	if (inum < 0 || inum >= INODE_NUM)
 	{
-		printf("\tim: error! inum %d out of range\n", inum);
+		// printf("\tim: error! inum %d out of range\n", inum);
 		return NULL;
 	}
 
@@ -215,7 +216,7 @@ inode_manager::get_inode(uint32_t inum)
 	ino_disk = (struct inode *)buf + inum % IPB;
 	if (ino_disk->type == 0)
 	{
-		printf("\tim: inode %d not exist\n", inum);
+		// printf("\tim: inode %d not exist\n", inum);
 		return NULL;
 	}
 
@@ -273,7 +274,7 @@ void inode_manager::read_file(uint32_t inum, char **buf_out, int *size)
 	struct inode *ino = get_inode(inum);
 	if (!ino)
 	{
-		printf("\tim: error! cannot to read inode %d\n", inum);
+		// printf("\tim: error! cannot to read inode %d\n", inum);
 		return;
 	}
 
@@ -324,7 +325,7 @@ void inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
 	struct inode *ino = get_inode(inum);
 	if (!ino)
 	{
-		printf("\tim: error! cannot write to inode %d\n", inum);
+		// printf("\tim: error! cannot write to inode %d\n", inum);
 		return;
 	}
 
@@ -332,7 +333,7 @@ void inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
 	int blockNumber = size / BLOCK_SIZE + (size % BLOCK_SIZE > 0);
 	if ((uint32_t)blockNumber > MAXFILE)
 	{
-		printf("\tim: error! write to many data into inode %d\n", inum);
+		// printf("\tim: error! write to many data into inode %d\n", inum);
 		return;
 	}
 
@@ -499,7 +500,7 @@ void inode_manager::remove_file(uint32_t inum)
 	struct inode *ino = get_inode(inum);
 	if (!ino)
 	{
-		printf("\tim: error! no inode %d to remove\n", inum);
+		// printf("\tim: error! no inode %d to remove\n", inum);
 		return;
 	}
 
