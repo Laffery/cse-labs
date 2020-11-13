@@ -122,9 +122,18 @@
 
 3. inode_manager.cc
 
-    inode_manager这一层又仔细阅读了这些代码，发现改无可改，最多就是把一些输出去掉
+    inode_manager这一层又仔细阅读了这些代码，把一些输出去掉，然后就是一些对inum的校验，我们新建了一个map using_inodes用来存inode的使用情况，使得inode的有效性只需要根据using_inodes\[inum]来判断，而不需要get_inode
 
-到现在未知，lab1的代码全部过完，按照原来代码的逻辑进行的优化也只取得了不到一倍的性能提升，这时候我们很容易会想到使用cache
+    ```sh
+    # native # ncpu secs works works/sec
+    1 5.000108 549248.000000 109847.227300
+    #yfs1 # ncpu secs works works/sec
+    1 5.009340 44032.000000 8789.980317
+    ```
+
+    至此，性能达到了0.08左右
+
+到现在为止，lab1的代码全部过完，按照原来代码的逻辑进行的优化也只取得了不到一倍的性能提升，这时候我们很容易会想到使用cache
 
 ### Cache
 

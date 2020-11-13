@@ -4,8 +4,10 @@
 #define inode_h
 
 #include <stdint.h>
-#include <map>
+#include <bitset>
 #include "extent_protocol.h"
+
+using namespace std;
 
 #define DISK_SIZE 1024 * 1024 * 16 // 16MB
 #define BLOCK_SIZE 512
@@ -44,7 +46,7 @@ public:
 
 private:
 	disk *d;
-	std::map<uint32_t, int> using_blocks; // bit map to manage block
+	bitset<BLOCK_NUM> using_blocks; // bit map to manage block
 
 public:
 	block_manager();
@@ -99,18 +101,11 @@ typedef struct inode
 	blockid_t blocks[NDIRECT + 1]; // Data block addresses
 } inode_t;
 
-typedef struct inode_cache
-{
-	uint32_t inum;
-	struct inode *ino;
-	string data;
-}
-
 class inode_manager
 {
 private:
 	block_manager *bm;
-	struct inode_cache *cache[INODE_CACHE_NUM];
+	bitset<INODE_NUM> using_inodes; // bit map to manage inode
 
 private:
 	struct inode *get_inode(uint32_t inum);
@@ -120,6 +115,7 @@ public:
 	inode_manager();
 	~inode_manager() {}
 
+	bool inumCheck(uint32_t inum);
 	uint32_t alloc_inode(uint32_t type);
 	void free_inode(uint32_t inum);
 	void read_file(uint32_t inum, char **buf_out, int *size);
