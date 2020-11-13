@@ -76,9 +76,21 @@ yfs_client::entry(const char *name, inum inum)
     return _name_str_ + _inum_str_.insert(_inum_size, DIR_INODE_LEN - _inum_size, 0);
 }
 
+
+/****************************/
+
+bool 
+yfs_client::inumCheck(inum inum)
+{
+    return (inum >= 0 && inum < INODE_NUM);
+}
+
 extent_protocol::types
 yfs_client::getType(inum inum)
 {
+    if (!inumCheck(inum))
+        return extent_protocol::T_NONE;
+
     extent_protocol::attr a;
     if (ec->getattr(inum, a) != extent_protocol::OK)
         return extent_protocol::T_NONE;
@@ -89,6 +101,9 @@ yfs_client::getType(inum inum)
 int
 yfs_client::getAttr(inum inum, info &in)
 {
+    if (!inumCheck(inum))
+        return IOERR;
+
     extent_protocol::attr a;
 
     if (ec->getattr(inum, a) != extent_protocol::OK)
@@ -116,14 +131,10 @@ int
 yfs_client::setattr(inum ino, size_t size)
 {
     // printf("YFS: _set_attr(ino, sz) %llu %lu\n", ino, size);
-    int r = OK;
-
-    if (ino < 0 || ino >= INODE_NUM || size < 0)
-    {
-        // printf("YFS: _setattr Error: inum %llu or size %lu out of range\n", ino, size);
+    if (!inumCheck(ino) || size < 0)
         return IOERR;
-    }
 
+    int r = OK;
     string buf;
 
     // read_file(ino, buf)
@@ -151,6 +162,9 @@ yfs_client::setattr(inum ino, size_t size)
 int
 yfs_client::lookup(inum parent, const char *name, bool &found, inum &ino_out)
 {
+    if (!inumCheck(parent))
+        return IOERR;
+
     // printf("YFS: _lookup '%s' in %llu\n", name, parent);
     int r = OK;
     string buf;
@@ -189,6 +203,9 @@ yfs_client::lookup(inum parent, const char *name, bool &found, inum &ino_out)
 int
 yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
 {
+    if (!inumCheck(parent))
+        return IOERR;
+
     // printf("YFS: _create '%s' in %llu\n", name, parent);
     int r = OK;
     bool found = false;
@@ -236,6 +253,9 @@ yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
 int
 yfs_client::mkdir(inum parent, const char *name, mode_t mode, inum &ino_out)
 {
+    if (!inumCheck(parent))
+        return IOERR;
+
     // printf("YFS: _mkdir '%s' in %llu\n", name, parent);
     int r = OK;
     bool found = false;
@@ -282,14 +302,17 @@ yfs_client::mkdir(inum parent, const char *name, mode_t mode, inum &ino_out)
 int
 yfs_client::readdir(inum dir, list<dirent> &list)
 {
+    if (!inumCheck(dir))
+        return IOERR;
+
     // printf("\nYFS: _read_dir %llu\n", dir);
     int r = OK;
 
-    if (dir <= 0 || dir > INODE_NUM)
-    {
-        // printf("YFS: _readdir Error: dir inode %llu out of range\n", dir);
-        return IOERR;
-    }
+    // if (dir <= 0 || dir > INODE_NUM)
+    // {
+    //     // printf("YFS: _readdir Error: dir inode %llu out of range\n", dir);
+    //     return IOERR;
+    // }
 
     string buf;
     if ((r = ec->get(dir, buf)) != extent_protocol::OK)
@@ -318,6 +341,9 @@ yfs_client::readdir(inum dir, list<dirent> &list)
 int
 yfs_client::read(inum ino, size_t size, off_t off, string &data)
 {
+    if (!inumCheck(ino))
+        return IOERR;
+
     // printf("YFS: _read %llu sz %lu off %ld\n", ino, size, off);
     int r = OK;
 
@@ -336,11 +362,13 @@ yfs_client::read(inum ino, size_t size, off_t off, string &data)
         return IOERR;
     }
 
-    if (size + off > _size_) {
-        data = buf.substr(off, _size_ - off);
-    } else {
-        data = buf.substr(off, size);
-    }
+    // if (size + off > _size_) {
+    //     data = buf.substr(off, _size_ - off);
+    // } else {
+    //     data = buf.substr(off, size);
+    // }
+
+    data = buf.substr(off, min(size, _size_ - off));
 
     // printf("YFS: _read: data: %s\n", data.c_str());
 
@@ -348,9 +376,11 @@ yfs_client::read(inum ino, size_t size, off_t off, string &data)
 }
 
 int
-yfs_client::write(inum ino, size_t size, off_t off, const char *data,
-        size_t &bytes_written)
+yfs_client::write(inum ino, size_t size, off_t off, const char *data, size_t &bytes_written)
 {
+    if (!inumCheck(ino) || size < 0)
+        return IOERR;
+
     // printf("YFS: _write %llu\n", ino);
     int r = OK;
 
@@ -362,6 +392,7 @@ yfs_client::write(inum ino, size_t size, off_t off, const char *data,
     if ((r = ec->get(ino, buf)) != extent_protocol::OK)
     {
         // printf("YFS: _write: cannot open file %llu\n", ino);
+        return r;
     }
 
     size_t _org_file_size_ = buf.size();
@@ -419,6 +450,9 @@ yfs_client::write(inum ino, size_t size, off_t off, const char *data,
 
 int yfs_client::unlink(inum parent,const char *name)
 {
+    if (!inumCheck(parent))
+        return IOERR;
+
     // printf("YFS: _unlink '%s' in %llu\n", name, parent);
     int r = OK;
 
@@ -474,6 +508,9 @@ int yfs_client::unlink(inum parent,const char *name)
 int
 yfs_client::symlink(inum parent, const char *link, inum &ino_out, const char *name)
 {
+    if (!inumCheck(parent))
+        return IOERR;
+
     // printf("YFS: _symlink(link, name): '%s' '%s' in %llu\n", link, name, parent);
     int r = OK;
 
@@ -513,6 +550,9 @@ yfs_client::symlink(inum parent, const char *link, inum &ino_out, const char *na
 int
 yfs_client::readlink(inum ino, string &data)
 {
+    if (!inumCheck(ino))
+        return IOERR;
+
     // printf("YFS: _readlink %llu\n", ino);
     int r = OK;
 

@@ -72,6 +72,8 @@ public:
 	yfs_client();
 	yfs_client(string, string);
 
+	bool inumCheck(inum);
+
 	extent_protocol::types getType(inum);
 	int getAttr(inum, info &);
 
