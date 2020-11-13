@@ -12,46 +12,23 @@ using namespace std;
 disk::disk()
 {
 	/* set all bits in blocks 0 */
-	// bzero(blocks, sizeof(blocks));
 	memset(blocks, 0, sizeof(blocks));
 }
 
 void disk::read_block(blockid_t id, char *buf)
 {
-	if (id < 0 || id >= BLOCK_NUM)
-	{
-		// printf("\td: error! cannot read block with invalid id %d\n", id);
+	if (id < 0 || id >= BLOCK_NUM || buf == NULL)
 		return;
-	}
-
-	if (buf == NULL)
-	{
-		// printf("\td: error! cannot write to a null ptr *buf\n");
-		return;
-	}
-
-	memcpy(buf, blocks[id], BLOCK_SIZE);
-	// printf("\td: read from block %d\n", id);
-	//cout << "\td: read '" << buf << "' from block " << id << endl;
+	else
+		memcpy(buf, blocks[id], BLOCK_SIZE);
 }
 
 void disk::write_block(blockid_t id, const char *buf)
 {
-	if (id < 0 || id >= BLOCK_NUM)
-	{
-		// printf("\td: error! cannot write to block with invalid id %d\n", id);
+	if (id < 0 || id >= BLOCK_NUM || buf == NULL)
 		return;
-	}
-
-	if (buf == NULL)
-	{
-		// printf("\td: error! cannot read from a null ptr *buf\n");
-		return;
-	}
-
-	//cout << "\td: write data '" << buf << "' to block " << id << endl;
-	// printf("\td: write to block %d\n", id);
-	memcpy(blocks[id], buf, BLOCK_SIZE);
+	else
+		memcpy(blocks[id], buf, BLOCK_SIZE);
 }
 
 // block layer -----------------------------------------
@@ -65,7 +42,6 @@ block_manager::alloc_block()
 		if (using_blocks[i] == 0)
 		{
 			using_blocks[i] = 1;
-			// printf("\tbm: allocate a block with id %i\n", i);
 			return i;
 		}
 	}
@@ -77,15 +53,9 @@ block_manager::alloc_block()
 void block_manager::free_block(uint32_t id)
 {
 	if (id < FIRST_BLOCK || id >= BLOCK_NUM)
-	{
-		// printf("\tbm: error! cannot free with an invalid block id %d\n", id);
 		return;
-	}
 	else
-	{
 		using_blocks[id] = 0;
-		// printf("\tbm: free block %d\n", id);
-	}
 }
 
 // The layout of disk should be like this:
@@ -130,8 +100,7 @@ inode_manager::inode_manager()
 	}
 }
 
-/* Create a new file.
- * Return its inum. */
+/* Create a new file and Return its inum. */
 uint32_t
 inode_manager::alloc_inode(uint32_t type)
 {
@@ -166,10 +135,7 @@ void inode_manager::free_inode(uint32_t inum)
 	struct inode *ino = get_inode(inum);
 
 	if (!ino)
-	{
-		// printf("\tim: error! inode %d is already a freed one\n", inum);
 		return;
-	}
 
 	ino->type = 0;
 	put_inode(inum, ino);
@@ -182,16 +148,19 @@ void inode_manager::free_inode(uint32_t inum)
 struct inode *
 inode_manager::get_inode(uint32_t inum)
 {
+	if (inum < 0 || inum >= INODE_NUM)
+		return NULL;
+
+	for (int i = 0; i < INODE_CACHE_NUM; ++i)
+	{
+		if (cache[i]->inum == inum)
+		{
+			return cache[i]->ino;
+		}
+	}
+
 	struct inode *ino, *ino_disk;
 	char buf[BLOCK_SIZE];
-
-	// printf("\tim: get_inode %d\n", inum);
-
-	if (inum < 0 || inum >= INODE_NUM)
-	{
-		// printf("\tim: error! inum %d out of range\n", inum);
-		return NULL;
-	}
 
 	bm->read_block(IBLOCK(inum, bm->sb.nblocks), buf);
 	ino_disk = (struct inode *)buf + inum % IPB;
@@ -204,8 +173,6 @@ inode_manager::get_inode(uint32_t inum)
 
 	ino = (struct inode *)malloc(sizeof(struct inode));
 	*ino = *ino_disk;
-
-	// printf("\t---get_inode---\n");
 	return ino;
 }
 
@@ -214,7 +181,6 @@ void inode_manager::put_inode(uint32_t inum, struct inode *ino)
 	char buf[BLOCK_SIZE];
 	struct inode *ino_disk;
 
-	// printf("\tim: put_inode %d\n", inum);
 	if (!ino)
 		return;
 
@@ -409,8 +375,6 @@ void inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
 void inode_manager::getattr(uint32_t inum, extent_protocol::attr &a)
 {
 	struct inode *ino = get_inode(inum);
-	// printf("\tim: get attr of inode %d\n", inum);
-
 	if (!ino)
 		return;
 
@@ -425,10 +389,7 @@ void inode_manager::remove_file(uint32_t inum)
 {
 	struct inode *ino = get_inode(inum);
 	if (!ino)
-	{
-		// printf("\tim: error! no inode %d to remove\n", inum);
 		return;
-	}
 
 	int blockNumber = ino->size / BLOCK_SIZE + (ino->size % BLOCK_SIZE > 0);
 

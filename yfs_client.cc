@@ -448,7 +448,7 @@ yfs_client::write(inum ino, size_t size, off_t off, const char *data, size_t &by
     return OK;
 }
 
-int yfs_client::unlink(inum parent,const char *name)
+int yfs_client::unlink(inum parent, const char *name)
 {
     if (!inumCheck(parent))
         return IOERR;

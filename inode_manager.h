@@ -5,24 +5,7 @@
 
 #include <stdint.h>
 #include <map>
-#include "extent_protocol.h" // TODO: delete it
-
-/*
- * TODO: part1A  
- * implement disk::read_block, disk::write_block, inode_manager::alloc_inode and inode_manager::getattr
- * to support CREATE and GETATTR APIs
- * should pass the test_create_and_getattr() in part1_tester, which tests creating empty files, getting their attributes like type.
- * 
- * TODO: part1B
- * implement inode_manager::write_file, inode_manager::read_file, block_manager::alloc_block, block_manager::free_block
- * to support PUT and GET APIs
- * should pass the test_put_and_get() in part1_tester, which, write and read files.
- * 
- * TODO: part1C
- * implement inode_manager::remove_file and inode_manager::free_inode
- * to support REMOVE API
- * should pass the test_remove() in part1_tester.
- */
+#include "extent_protocol.h"
 
 #define DISK_SIZE 1024 * 1024 * 16 // 16MB
 #define BLOCK_SIZE 512
@@ -76,6 +59,7 @@ public:
 // inode layer -----------------------------------------
 
 #define INODE_NUM 1024
+#define INODE_CACHE_NUM 16
 
 /*
  * Inodes per block. Here means a block only contain an inode, 
@@ -115,10 +99,18 @@ typedef struct inode
 	blockid_t blocks[NDIRECT + 1]; // Data block addresses
 } inode_t;
 
+typedef struct inode_cache
+{
+	uint32_t inum;
+	struct inode *ino;
+	string data;
+}
+
 class inode_manager
 {
 private:
 	block_manager *bm;
+	struct inode_cache *cache[INODE_CACHE_NUM];
 
 private:
 	struct inode *get_inode(uint32_t inum);
