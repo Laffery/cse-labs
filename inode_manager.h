@@ -53,7 +53,9 @@ public:
 	~block_manager() {}
 
 	uint32_t alloc_block();
+	uint32_t *alloc_nblock(int size);
 	void free_block(uint32_t id);
+	void free_nblock(uint32_t *ids, int size);
 	void read_block(uint32_t id, char *buf);
 	void write_block(uint32_t id, const char *buf);
 };

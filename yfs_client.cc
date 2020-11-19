@@ -29,7 +29,7 @@ yfs_client::yfs_client(string extent_dst, string lock_dst)
 yfs_client::~yfs_client()
 {
     delete [] cache;
-    delete [] cache_inum;
+    delete [] incache;
 }
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -74,14 +74,12 @@ yfs_client::entry(const char *name, inum inum)
     return _name_str_ + _inum_str_.insert(_inum_size, DIR_INODE_LEN - _inum_size, 0);
 }
 
-
 /****************************/
 
 bool 
 yfs_client::inumCheck(inum inum)
 {
     return (inum >= 0 && inum < INODE_NUM) ? imap[inum] : false;
-    // return (inum >= 0 && inum < INODE_NUM);
 }
 
 
@@ -91,12 +89,12 @@ yfs_client::cache_init()
     imap.flip(0);
     imap.flip(1);
     cache_size = 0;
-    cache_inum = new inum[YFS_CACHE_NUM];
+    incache = new inum[YFS_CACHE_NUM];
     cache = new string[YFS_CACHE_NUM];
 
     for (int i = 0; i < YFS_CACHE_NUM; ++i)
     {
-        cache_inum[i] = -1;
+        incache[i] = -1;
     }
 }
 
@@ -106,7 +104,7 @@ yfs_client::cache_put(inum num, string data)
     bool flag = false;
     for (int i = 0; i < YFS_CACHE_NUM; ++i)
     {
-        if (cache_inum[i] == num) {
+        if (incache[i] == num) {
             cache[i] = data;
             flag = true;
             break;
@@ -119,7 +117,7 @@ yfs_client::cache_put(inum num, string data)
         {
             index = (cache_size++);
         }
-        cache_inum[index] = num;
+        incache[index] = num;
         cache[index] = data;
     }
 }
@@ -129,7 +127,7 @@ yfs_client::cache_get(inum num, string &data)
 {
     for (int i = 0; i < MIN(cache_size, YFS_CACHE_NUM); ++i)
     {
-        if (cache_inum[i] == num) {
+        if (incache[i] == num) {
             data = cache[i];
             return 1;
         }
@@ -143,9 +141,9 @@ yfs_client::cache_remove(inum num)
 {
     for (int i = 0; i < MIN(cache_size, YFS_CACHE_NUM); ++i)
     {
-        if (cache_inum[i] == num)
+        if (incache[i] == num)
         {
-            cache_inum[i] = -1;
+            incache[i] = -1;
             return;
         }
     }

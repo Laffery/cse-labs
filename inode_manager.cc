@@ -49,12 +49,40 @@ block_manager::alloc_block()
 	return 0;
 }
 
-void block_manager::free_block(uint32_t id)
+blockid_t *
+block_manager::alloc_nblock(int size)
 {
-	if (id < FIRST_BLOCK || id >= BLOCK_NUM)
-		return;
-	else
-		using_blocks.flip(id);
+	int tmp = 0;
+	blockid_t *ids;
+	ids = new blockid_t[size];
+
+	for (blockid_t i = FIRST_BLOCK; i < BLOCK_NUM; ++i)
+	{
+		if (!using_blocks[i])
+		{
+			using_blocks.flip();
+			ids[tmp] = i;
+			tmp++;
+		}
+
+		if (tmp == size)
+			break;
+	}
+
+	return ids;
+}
+
+void 
+block_manager::free_block(uint32_t id)
+{
+	using_blocks.set(id, 0);
+}
+
+void 
+block_manager::free_nblock(uint32_t *ids, int size)
+{
+	for (int i = 0; i < size; ++i)
+		using_blocks.set(i, 0);
 }
 
 // The layout of disk should be like this:
@@ -193,9 +221,7 @@ void inode_manager::read_file(uint32_t inum, char **buf_out, int *size)
 
 	// clone direct blocks' data to buffer
 	for (int i = 0; i < MIN(blockNumber, NDIRECT); ++i)
-	{
 		bm->read_block(ino->blocks[i], buf + i * BLOCK_SIZE);
-	}
 
 	// there is some indirect blocks in this inode
 	if (blockNumber > NDIRECT) // all block of this inode is direct
@@ -205,9 +231,7 @@ void inode_manager::read_file(uint32_t inum, char **buf_out, int *size)
 		bm->read_block(ino->blocks[NDIRECT], (char *)bidList);
 
 		for (int i = 0; i < blockNumber - NDIRECT; ++i)
-		{
 			bm->read_block(bidList[i], buf + (NDIRECT + i) * BLOCK_SIZE);
-		}
 	}
 
 	*size = ino->size;
@@ -230,20 +254,15 @@ void inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
 	// how many blocks is needed
 	int blockNumber = size / BLOCK_SIZE + (size % BLOCK_SIZE > 0);
 	if ((uint32_t)blockNumber > MAXFILE)
-	{
 		return;
-	}
 
 	// how many blocks originally does this inode have
 	int blockNumOrigin = ino->size / BLOCK_SIZE + (ino->size % BLOCK_SIZE > 0);
-	// printf("\tim: blockNumber is %d and blockNumOrigin is %d\n", blockNumber, blockNumOrigin);
 
 	// indirect blocks' id list
 	uint32_t bidList[NINDIRECT];
 	if (blockNumber > NDIRECT || blockNumOrigin > NDIRECT)
-	{
 		bm->read_block(ino->blocks[NDIRECT], (char *)bidList);
-	}
 
 	// need to allocate new block
 	if (blockNumber > blockNumOrigin)
@@ -252,9 +271,7 @@ void inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
 		if (blockNumber <= NDIRECT)
 		{
 			for (int i = blockNumOrigin; i < blockNumber; ++i)
-			{
 				ino->blocks[i] = bm->alloc_block();
-			}
 		}
 
 		else
@@ -263,24 +280,18 @@ void inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
 			if (blockNumOrigin <= NDIRECT)
 			{
 				for (int i = blockNumOrigin; i < NDIRECT; ++i)
-				{
 					ino->blocks[i] = bm->alloc_block();
-				}
 
 				// there is no indirect block in origin, so that we need to alloc
 				for (int i = NDIRECT; i < blockNumber; ++i)
-				{
 					bidList[i - NDIRECT] = bm->alloc_block();
-				}
 			}
 
 			// need to allocate indirect blocks only
 			else
 			{
 				for (int i = blockNumOrigin; i < blockNumber; ++i)
-				{
 					bidList[i - NDIRECT] = bm->alloc_block();
-				}
 			}
 
 			// write new indirect blocks
@@ -295,9 +306,7 @@ void inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
 		if (blockNumber > NDIRECT)
 		{
 			for (int i = blockNumber; i < blockNumOrigin; ++i)
-			{
 				bm->free_block(bidList[i - NDIRECT]);
-			}
 		}
 
 		else
@@ -306,9 +315,7 @@ void inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
 			if (blockNumOrigin <= NDIRECT)
 			{
 				for (int i = blockNumber; i < blockNumOrigin; ++i)
-				{
 					bm->free_block(ino->blocks[i]);
-				}
 			}
 
 			// need to free both direct and all indirect blocks
@@ -316,32 +323,24 @@ void inode_manager::write_file(uint32_t inum, const char *buf_in, int size)
 			{
 				// free some direct blocks
 				for (int i = blockNumber; i < NDIRECT; ++i)
-				{
 					bm->free_block(ino->blocks[i]);
-				}
 
 				// free some indirect blocks
 				for (int i = NDIRECT; i < blockNumOrigin; ++i)
-				{
 					bm->free_block(bidList[i - NDIRECT]);
-				}
 			}
 		}
 	}
 
 	// write file data
 	for (int i = 0; i < MIN(blockNumber, NDIRECT); ++i)
-	{
 		bm->write_block(ino->blocks[i], buf_in + i * BLOCK_SIZE);
-	}
 
 	// write data to indirect block
 	if (blockNumber > NDIRECT)
 	{
 		for (int i = NDIRECT; i < blockNumber; ++i)
-		{
 			bm->write_block(bidList[i - NDIRECT], buf_in + i * BLOCK_SIZE);
-		}
 	}
 
 	// update inode meta data
@@ -386,6 +385,7 @@ void inode_manager::remove_file(uint32_t inum)
 		{
 			bm->free_block(ino->blocks[i]);
 		}
+		// bm->free_nblock(ino->blocks, blockNumber);
 	}
 
 	// need to free both direct and indirect blocks
@@ -406,6 +406,7 @@ void inode_manager::remove_file(uint32_t inum)
 		{
 			bm->free_block(bidList[i]);
 		}
+		// bm->free_nblock(bidList, blockNumber - NDIRECT);
 
 		// free indirect blocks table
 		bm->free_block(ino->blocks[NDIRECT]);

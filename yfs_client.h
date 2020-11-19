@@ -37,7 +37,7 @@ public:
 		unsigned long ctime;
 	} info_t;
 
-	typedef struct entry
+	typedef struct ent
 	{
 		string data;
 	} entry_t;
@@ -49,8 +49,8 @@ public:
 	};
 
 private:
-	bitset<INODE_NUM> imap;
-	inum *cache_inum;
+	bitset<INODE_NUM> imap; // whether an inode exists
+	inum *incache; // whether an inode in cache
 	string *cache;
 	int cache_size;
 
