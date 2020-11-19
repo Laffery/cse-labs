@@ -1,3 +1,5 @@
 *.o
 *.d
 *.log
+yfs_client
+part1_tester

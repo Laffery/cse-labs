@@ -2,11 +2,15 @@
 #define yfs_client_h
 
 #include <string>
+#include <bitset>
+#include <map>
 //#include "yfs_protocol.h"
 #include "extent_client.h"
 #include <vector>
 
 using namespace std;
+
+#define YFS_CACHE_NUM 32
 
 class yfs_client
 {
@@ -31,36 +35,24 @@ public:
 		unsigned long atime;
 		unsigned long mtime;
 		unsigned long ctime;
-	};
+	} info_t;
 
-	// struct fileinfo
-	// {
-	// 	unsigned long long size;
-	// 	unsigned long atime;
-	// 	unsigned long mtime;
-	// 	unsigned long ctime;
-	// };
-
-	// struct dirinfo
-	// {
-	// 	unsigned long atime;
-	// 	unsigned long mtime;
-	// 	unsigned long ctime;
-	// };
-
-	// struct syminfo
-	// {
-	// 	unsigned long long size;
-	// 	unsigned long atime;
-	// 	unsigned long mtime;
-	// 	unsigned long ctime;
-	// };
+	typedef struct entry
+	{
+		string data;
+	} entry_t;
 
 	struct dirent
 	{
 		string name;
 		yfs_client::inum inum;
 	};
+
+private:
+	bitset<INODE_NUM> imap;
+	inum *cache_inum;
+	string *cache;
+	int cache_size;
 
 private:
 	static string filename(const char *);
@@ -71,8 +63,17 @@ private:
 public:
 	yfs_client();
 	yfs_client(string, string);
+	~yfs_client();
 
 	bool inumCheck(inum);
+
+	void cache_init();
+	void cache_put(inum, string);
+	int cache_get(inum, string &);
+	void cache_remove(inum);
+
+	int yfs_get(inum, string &);
+	int yfs_put(inum, string);
 
 	extent_protocol::types getType(inum);
 	int getAttr(inum, info &);
