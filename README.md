@@ -132,6 +132,17 @@
 
     至此，性能达到了0.08左右
 
+4. extent_server.cc
+
+   删除printf
+
+    ```sh
+    # native # ncpu secs works works/sec
+    1 5.000345 525184.000000 105029.552961
+    # yfs1 # ncpu secs works works/sec
+    1 5.019722 46208.000000 9205.290652
+    ```
+
 到现在为止，lab1的代码全部过完，按照原来代码的逻辑进行的优化也只取得了不到一倍的性能提升，这时候我们很容易会想到使用cache
 
 ### Cache
@@ -141,4 +152,67 @@
 - ec->get(ino) 对应im->read_file
 - ec->put(ino) 对应im->write_file
 
-就需要在磁盘中进行多次操作，那么我们
+就需要在磁盘中进行多次操作，那么我们想到在yfs就对它们进行缓存，于是我们封装了一批新的函数
+
+```cpp
+int // cache中没有则通过ec取
+yfs_client::yfs_get(inum num, string &data)
+{
+    if (!cache_get(num, data))
+        return ec->get(num, data);
+
+    return OK;
+}
+
+int // ec存成功后cache中缓存一份
+yfs_client::yfs_put(inum num, string data)
+{
+    int r;
+    if ((r = ec->put(num, data)) == OK)
+        cache_put(num, data);
+    return r;
+}
+
+int // ec删除成功后cache中也删除
+yfs_client::yfs_remove(inum num)
+{
+    int r;
+    if ((r = ec->remove(num)) == OK)
+        cache_remove(num);
+    return r;
+}
+```
+
+```sh
+# native # ncpu secs works works/sec
+1 5.001674 539136.000000 107791.111536
+# yfs1 # ncpu secs works works/sec
+1 5.000280 50816.000000 10162.630893
+```
+
+至此，cache的性能提升并没有很明显，目前的性能达到了最开始的两倍，我们再来尝试下貌似不可信的本地运行
+
+```sh
+# native # ncpu secs works works/sec
+1 5.448669 1152.000000 211.427782
+# yfs1 # ncpu secs works works/sec
+1 5.144928 1536.000000 298.546452
+# native # ncpu secs works works/sec
+1 5.010473 1152.000000 229.918413
+# yfs1 # ncpu secs works works/sec
+1 5.412368 1664.000000 307.443988
+# native # ncpu secs works works/sec
+1 5.133279 1152.000000 224.417960
+# yfs1 # ncpu secs works works/sec
+1 5.235708 1536.000000 293.370066
+# native # ncpu secs works works/sec
+1 5.137887 1152.000000 224.216687
+# yfs1 # ncpu secs works works/sec
+1 5.155713 1536.000000 297.921936
+# native # ncpu secs works works/sec
+1 5.510881 1152.000000 209.040986
+# yfs1 # ncpu secs works works/sec
+1 5.058905 1408.000000 278.321099
+```
+
+似乎不跳了，稳定在native的1.3~1.4倍

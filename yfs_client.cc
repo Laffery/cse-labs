@@ -34,7 +34,6 @@ yfs_client::~yfs_client()
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-
 string
 yfs_client::filename(const char *name)
 {
@@ -79,82 +78,76 @@ yfs_client::entry(const char *name, inum inum)
 bool 
 yfs_client::inumCheck(inum inum)
 {
-    return (inum >= 0 && inum < INODE_NUM) ? imap[inum] : false;
+    return (inum >= 0 && inum < INODE_NUM);
 }
 
 
 void
 yfs_client::cache_init()
 {
-    imap.flip(0);
-    imap.flip(1);
-    cache_size = 0;
     incache = new inum[YFS_CACHE_NUM];
     cache = new string[YFS_CACHE_NUM];
-
-    for (int i = 0; i < YFS_CACHE_NUM; ++i)
-    {
-        incache[i] = -1;
-    }
 }
 
 void
 yfs_client::cache_put(inum num, string data)
 {
-    bool flag = false;
-    for (int i = 0; i < YFS_CACHE_NUM; ++i)
-    {
-        if (incache[i] == num) {
-            cache[i] = data;
-            flag = true;
-            break;
-        }
-    }
-
-    if (!flag) {
-        int index = num%YFS_CACHE_NUM;
-        if (cache_size < YFS_CACHE_NUM)
-        {
-            index = (cache_size++);
-        }
-        incache[index] = num;
-        cache[index] = data;
-    }
+    int index = num%YFS_CACHE_NUM;
+    incache[index] = num;
+    cache[index] = data;
 }
 
 int
 yfs_client::cache_get(inum num, string &data)
 {
-    for (int i = 0; i < MIN(cache_size, YFS_CACHE_NUM); ++i)
+    int index = num%YFS_CACHE_NUM;
+    if (incache[index] != num)
+        return 0;
+    else
     {
-        if (incache[i] == num) {
-            data = cache[i];
-            return 1;
-        }
+        data = cache[index];
+        return 1;
     }
-
-    return 0;
 }
 
 void
 yfs_client::cache_remove(inum num)
 {
-    for (int i = 0; i < MIN(cache_size, YFS_CACHE_NUM); ++i)
-    {
-        if (incache[i] == num)
-        {
-            incache[i] = -1;
-            return;
-        }
-    }
+    incache[num%YFS_CACHE_NUM] = -1;
 }
 
+int
+yfs_client::yfs_get(inum num, string &data)
+{
+    if (!cache_get(num, data))
+        return ec->get(num, data);
+
+    return OK;
+}
+
+int
+yfs_client::yfs_put(inum num, string data)
+{
+    int r;
+    if ((r = ec->put(num, data)) == OK)
+        cache_put(num, data);
+    return r;
+}
+
+int
+yfs_client::yfs_remove(inum num)
+{
+    int r;
+    if ((r = ec->remove(num)) == OK)
+        cache_remove(num);
+    return r;
+}
 
 extent_protocol::types
 yfs_client::getType(inum inum)
 {
-    if (!inumCheck(inum))
-        return extent_protocol::T_NONE;
+    // if (!inumCheck(inum))
+    //     return extent_protocol::T_NONE;
 
     extent_protocol::attr a;
     if (ec->getattr(inum, a) != extent_protocol::OK)
@@ -166,8 +159,8 @@ yfs_client::getType(inum inum)
 int
 yfs_client::getAttr(inum inum, info &in)
 {
-    if (!inumCheck(inum))
-        return IOERR;
+    // if (!inumCheck(inum))
+    //     return IOERR;
 
     extent_protocol::attr a;
 
@@ -195,14 +188,15 @@ yfs_client::getAttr(inum inum, info &in)
 int
 yfs_client::setattr(inum ino, size_t size)
 {
-    if (!inumCheck(ino) || size < 0)
-        return IOERR;
+    // if (!inumCheck(ino) || size < 0)
+    //     return IOERR;
 
     int r = OK;
     string buf;
 
     // read_file(ino, buf)
-    if ((r = ec->get(ino, buf)) != extent_protocol::OK)
+    // if ((r = ec->get(ino, buf)) != extent_protocol::OK)
+    if ((r = yfs_get(ino, buf)) != OK)
         return r;
 
     // if size < _size_ need to erase some bits, else add some new bits 0
@@ -210,50 +204,32 @@ yfs_client::setattr(inum ino, size_t size)
     buf = (_size_ > size) ? buf.substr(0, size) : buf.insert(_size_, size - _size_, 0);
 
     // store back, attr of inode will be correct by write_inode
-    r = ec->put(ino, buf);
-    return r;
+    // return ec->put(ino, buf);
+    return yfs_put(ino, buf);
 }
 
 int
 yfs_client::lookup(inum parent, const char *name, bool &found, inum &ino_out)
 {
-    if (!inumCheck(parent))
-        return IOERR;
-
-    int r = OK;
-    string buf;
-    
-    // read parent dir
-    if ((r = ec->get(parent, buf)) != extent_protocol::OK)
-        return r;
-
-    string _name_str_ = filename(name);  
-
-    // loop for every entry in the parent dir
-    for (size_t i = 0; i < buf.size(); i += DIR_ENTRY_LEN)
+    list<dirent> ls = dir_cache[parent];
+    for (list<dirent>::iterator it = ls.begin(); it != ls.end(); ++it)
     {
-        // the ith filename
-        string _file_name_ = buf.substr(i, DIR_FNAME_LEN);
-        
-        // find it!
-        if (!strcmp(_file_name_.c_str(), _name_str_.c_str()))
+        if ((*it).name == string(name))
         {
-            ino_out = n2i(buf.substr(i + DIR_FNAME_LEN, DIR_INODE_LEN));
             found = true;
-            return OK;
+            ino_out = (*it).inum;
+            break;
         }
     }
-
-    // not found
-    found = false;
+    
     return OK;
 }
 
 int
 yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
 {
-    if (!inumCheck(parent))
-        return IOERR;
+    // if (!inumCheck(parent))
+    //     return IOERR;
 
     int r = OK;
     bool found = false;
@@ -271,23 +247,28 @@ yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
     /* add entry to the dir */
     // get dir
     string buf;
-    if ((r = ec->get(parent, buf)) != extent_protocol::OK)
+    // if ((r = ec->get(parent, buf)) != extent_protocol::OK)
+    if ((r = yfs_get(parent, buf)) != OK)
         return r;
     
     // write back to parent
     buf = buf.insert(buf.size(), entry(name, ino_out));
-    if ((r = ec->put(parent, buf)) != extent_protocol::OK)
+    // if ((r = ec->put(parent, buf)) != extent_protocol::OK)
+    if ((r = yfs_put(parent, buf)) != OK)
         return r;
 
-    imap.set(ino_out, 1);
+    dirent file;
+    file.inum = ino_out;
+    file.name = string(name);
+    dir_cache[parent].push_back(file);
     return OK;
 }
 
 int
 yfs_client::mkdir(inum parent, const char *name, mode_t mode, inum &ino_out)
 {
-    if (!inumCheck(parent))
-        return IOERR;
+    // if (!inumCheck(parent))
+    //     return IOERR;
 
     int r = OK;
     bool found = false;
@@ -303,51 +284,44 @@ yfs_client::mkdir(inum parent, const char *name, mode_t mode, inum &ino_out)
     string buf;
 
     // get parent dir
-    if ((r = ec->get(parent, buf)) != extent_protocol::OK)
+    // if ((r = ec->get(parent, buf)) != extent_protocol::OK)
+    if ((r = yfs_get(parent, buf)) != OK)
         return r;
 
     // add entry in parent dir
     buf += entry(name, ino_out);
 
-    if ((r = ec->put(parent, buf)) != extent_protocol::OK)
+    // if ((r = ec->put(parent, buf)) != extent_protocol::OK)
+    if ((r = yfs_get(parent, buf)) != OK)
         return r;
-
-    imap.set(ino_out, 1);
+    
+    dirent dir;
+    dir.inum = ino_out;
+    dir.name = string(name);
+    dir_cache[parent].push_back(dir);
+    list<dirent> files;
+    dir_cache.insert(pair<inum, list<dirent> >(ino_out, files));
     return OK;
 }
 
 int
 yfs_client::readdir(inum dir, list<dirent> &list)
 {
-    if (!inumCheck(dir))
-        return IOERR;
-
-    int r = OK;
-    string buf;
-    if ((r = ec->get(dir, buf)) != extent_protocol::OK)
-        return r;
-
-    for (size_t i = 0; i < buf.size(); i += DIR_ENTRY_LEN)
-    {
-        struct dirent _entry_;
-        _entry_.name = buf.substr(i, DIR_FNAME_LEN);
-        _entry_.inum = n2i(buf.substr(i + DIR_FNAME_LEN, DIR_INODE_LEN));
-        list.push_back(_entry_);
-    }
-
+    list = dir_cache[dir];
     return OK;
 }
 
 int
 yfs_client::read(inum ino, size_t size, off_t off, string &data)
 {
-    if (!inumCheck(ino))
-        return IOERR;
+    // if (!inumCheck(ino))
+    //     return IOERR;
 
     int r = OK;
 
     string buf;
-    if ((r = ec->get(ino, buf)) != extent_protocol::OK)
+    // if ((r = ec->get(ino, buf)) != extent_protocol::OK)
+    if ((r = yfs_get(ino, buf)) != OK)
         return r;
 
     size_t _size_ = buf.size();
@@ -365,12 +339,13 @@ yfs_client::read(inum ino, size_t size, off_t off, string &data)
 int 
 yfs_client::write(inum ino, size_t size, off_t off, const char *data, size_t &bytes_written)
 {
-    if (!inumCheck(ino) || size < 0)
-        return IOERR;
+    // if (!inumCheck(ino) || size < 0)
+    //     return IOERR;
 
     int r = OK;
     string buf;
-    if ((r = ec->get(ino, buf)) != extent_protocol::OK)
+    // if ((r = ec->get(ino, buf)) != extent_protocol::OK)
+    if ((r = yfs_get(ino, buf)) != OK)
         return r;
     
     // off + write size <= file size
@@ -381,14 +356,14 @@ yfs_client::write(inum ino, size_t size, off_t off, const char *data, size_t &by
         buf[i] = data[i - off];
 
     bytes_written = size;
-    r = ec->put(ino, buf);
-    return r;
+    // return ec->put(ino, buf);
+    return yfs_put(ino, buf);
 }
 
 int yfs_client::unlink(inum parent, const char *name)
 {
-    if (!inumCheck(parent))
-        return IOERR;
+    // if (!inumCheck(parent))
+    //     return IOERR;
 
     int r = OK;
 
@@ -401,14 +376,14 @@ int yfs_client::unlink(inum parent, const char *name)
         return NOENT;
 
     // remove file
-    if ((r = ec->remove(ino)) != extent_protocol::OK)
+    // if ((r = ec->remove(ino)) != extent_protocol::OK)
+    if ((r = yfs_remove(ino)) != OK)
         return r;
-
-    imap.set(ino, 0);
 
     // remove entry in parent dir
     string buf;
-    if ((r = ec->get(parent, buf)) != extent_protocol::OK)
+    // if ((r = ec->get(parent, buf)) != extent_protocol::OK)
+    if ((r = yfs_get(parent, buf)) != OK)
         return r;
 
     string _name_str_ = filename(name);
@@ -421,17 +396,28 @@ int yfs_client::unlink(inum parent, const char *name)
         }
     }
 
-    r = ec->put(parent, buf);
+    // r = ec->put(parent, buf);
+    r = yfs_put(parent, buf);
+
+    list<dirent> ls = dir_cache[parent];
+    for (list<dirent>::iterator it = ls.begin(); it != ls.end(); ++it)
+    {
+        if ((*it).name == string(name))
+        {
+            ls.erase(it);
+            break;
+        }
+    }
+    dir_cache[parent] = ls;
     return r;
 }
 
 int
 yfs_client::symlink(inum parent, const char *link, inum &ino_out, const char *name)
 {
-    if (!inumCheck(parent))
-        return IOERR;
+    // if (!inumCheck(parent))
+    //     return IOERR;
 
-    // printf("YFS: _symlink(link, name): '%s' '%s' in %llu\n", link, name, parent);
     int r = OK;
 
     // create a new inode
@@ -439,28 +425,34 @@ yfs_client::symlink(inum parent, const char *link, inum &ino_out, const char *na
         return r;
 
     // save linked path to inode ino_out
-    if ((r = ec->put(ino_out, string(link))) != extent_protocol::OK)
+    // if ((r = ec->put(ino_out, string(link))) != extent_protocol::OK)
+    if ((r = yfs_put(ino_out, string(link))) != OK)
         return r;
 
     string buf;
-    if ((r = ec->get(parent, buf)) != extent_protocol::OK)
+    // if ((r = ec->get(parent, buf)) != extent_protocol::OK)
+    if ((r = yfs_get(parent, buf)) != OK)
         return r;
 
     buf += entry(name, ino_out);
 
-    if ((r = ec->put(parent, buf)) != extent_protocol::OK)
+    // if ((r = ec->put(parent, buf)) != extent_protocol::OK)
+    if ((r = yfs_put(parent, buf)) != OK)
         return r;
 
-    imap.set(ino_out, 1);
+    dirent file;
+    file.inum = ino_out;
+    file.name = string(name);
+    dir_cache[parent].push_back(file);
     return OK;
 }
 
 int
 yfs_client::readlink(inum ino, string &data)
 {
-    if (!inumCheck(ino))
-        return IOERR;
+    // if (!inumCheck(ino))
+    //     return IOERR;
 
-    int r = ec->get(ino, data);
-    return r;
+    // return ec->get(ino, data);
+    return yfs_get(ino, data);
 }

@@ -7,10 +7,11 @@
 //#include "yfs_protocol.h"
 #include "extent_client.h"
 #include <vector>
+#include <list>
 
 using namespace std;
 
-#define YFS_CACHE_NUM 32
+#define YFS_CACHE_NUM 16
 
 class yfs_client
 {
@@ -37,11 +38,6 @@ public:
 		unsigned long ctime;
 	} info_t;
 
-	typedef struct ent
-	{
-		string data;
-	} entry_t;
-
 	struct dirent
 	{
 		string name;
@@ -49,10 +45,9 @@ public:
 	};
 
 private:
-	bitset<INODE_NUM> imap; // whether an inode exists
 	inum *incache; // whether an inode in cache
 	string *cache;
-	int cache_size;
+	map<inum, list<dirent> > dir_cache;
 
 private:
 	static string filename(const char *);
@@ -74,6 +69,7 @@ public:
 
 	int yfs_get(inum, string &);
 	int yfs_put(inum, string);
+	int yfs_remove(inum);
 
 	extent_protocol::types getType(inum);
 	int getAttr(inum, info &);
