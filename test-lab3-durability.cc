@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 	y.set("a", tmp1+"-50");
 	y.set("b", tmp2+"+50");
 	y.transaction_commit();
-	
+
 	/*
 	y.transaction_begin();
 	string r1 = y.get("a");

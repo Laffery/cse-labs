@@ -4,10 +4,8 @@
 #define inode_h
 
 #include <stdint.h>
-#include <map>
-#include <time.h>
-#include <iostream>
-#include "extent_protocol.h" // TODO delete it
+#include <bitset>
+#include "extent_protocol.h"
 
 using namespace std;
 
@@ -48,14 +46,16 @@ public:
 
 private:
 	disk *d;
-	std::map<uint32_t, int> using_blocks; // bit map to manage block
+	bitset<BLOCK_NUM> using_blocks; // bit map to manage block
 
 public:
 	block_manager();
 	~block_manager() {}
 
 	uint32_t alloc_block();
+	uint32_t *alloc_nblock(int size);
 	void free_block(uint32_t id);
+	void free_nblock(uint32_t *ids, int size);
 	void read_block(uint32_t id, char *buf);
 	void write_block(uint32_t id, const char *buf);
 };
@@ -63,6 +63,7 @@ public:
 // inode layer -----------------------------------------
 
 #define INODE_NUM 1024
+#define INODE_CACHE_NUM 16
 
 /*
  * Inodes per block. Here means a block only contain an inode, 
@@ -106,6 +107,7 @@ class inode_manager
 {
 private:
 	block_manager *bm;
+	bitset<INODE_NUM> using_inodes; // bit map to manage inode
 
 private:
 	struct inode *get_inode(uint32_t inum);
@@ -115,6 +117,7 @@ public:
 	inode_manager();
 	~inode_manager() {}
 
+	bool inumCheck(uint32_t inum);
 	uint32_t alloc_inode(uint32_t type);
 	void free_inode(uint32_t inum);
 	void read_file(uint32_t inum, char **buf_out, int *size);
@@ -129,8 +132,5 @@ public:
 #define DIR_INODE_LEN 4	 // uint32_t
 #define DIR_FNAME_LEN 60 // maxium value
 #define DIR_ENTRY_LEN (DIR_INODE_LEN + DIR_FNAME_LEN)
-
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define FIRST_BLOCK (3 + BLOCK_NUM / BPB + INODE_NUM / IPB)
 
 #endif
