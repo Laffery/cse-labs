@@ -19,8 +19,6 @@ class ydb_server {
 protected:
 	extent_client *ec;
 	lock_client *lc;
-	bitset<1024> using_inodes;
-	map<string, uint32_t> key_ino;
 public:
 	ydb_server(string, string);
 	virtual ~ydb_server();
