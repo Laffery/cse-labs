@@ -19,7 +19,7 @@ ydb_server_2pl::ydb_server_2pl(std::string extent_dst, std::string lock_dst) : y
 		ino_mutex[i] = mutex;
 
 		ino_owner[i] = -1;
-		change_id[i] = -1;
+		// change_id[i] = -1;
 	}
 
 #ifdef COMPLEX
@@ -214,13 +214,15 @@ ydb_server_2pl::set(ydb_protocol::transaction_id id, const std::string key, cons
 	
 	pthread_mutex_lock(&trans_stat_mutex);
 
-	ydb_protocol::transaction_id tid = change_id[ino];
+	ydb_protocol::transaction_id tid = change_id.count(ino) ? change_id[ino] : -1;
+
+	if (tid == -1)
+		goto common;
+	
 	if (tid != id)
 	{
-		string buf;
-		switch(trans_stat[tid])
+		if (trans_stat[tid] == ydb_protocol::BEGIN)
 		{
-		case ydb_protocol::BEGIN:
 			if (detectDL(id, tid))
 			{
 				printf("transaction %d deadlock\n", id);
@@ -241,15 +243,14 @@ ydb_server_2pl::set(ydb_protocol::transaction_id id, const std::string key, cons
 				pthread_mutex_lock(&trans_stat_mutex);
 				pthread_mutex_unlock(&trans_mutex[tid]);
 			}
-		case ydb_protocol::COMMIT: 
-		case ydb_protocol::ABORTED:
-			acquire(id, ino);
-			ec->get(ino, buf);
-			origin_value[ino] = buf;
-			change_id[ino] = id;
-		default:
-			break;
 		}
+
+common:
+		acquire(id, ino);
+		string buf;
+		ec->get(ino, buf);
+		origin_value[ino] = buf;
+		change_id[ino] = id;
 	}
 	pthread_mutex_unlock(&trans_stat_mutex);
 
