@@ -1,5 +1,7 @@
 # CSE-2020-fall lab3 YourDataBase
 
+> 😊 Ao Yuchen | 🔑 518021910545
+
 ## Getting started
 
 git合并后运行
@@ -172,4 +174,82 @@ Finish testing part1 : no transaction
 
 ## Part3 OCC
 
-1. basic
+根据OCC协议的精神，我们选择这样的版本号控制的实现方式
+
+- 为inode加上一个版本map ino_version。当inode被修改时，对应的version值会+1。
+
+- set时直接将要写入的内容存在trans_write对应的位置上
+
+- get时若trans_write中有相应的inode数据，直接从其中取得；否则调用ec获取，同时会读取version值并存在trans_read中对应的位置
+
+- set的数据并没有直接写入持久化中，而是在提交事务时，需要验证成功后才能存入
+
+- 事务提交时的验证，对于需要写入的数据，若trans_read留存的对应的version值与当前版本表中的version相等时才写入，否则事务中止
+
+基于以上实现方式，很意外一次性通过了所有的测试
+
+```sh
+Start testing part1 : no transaction
+
+start no transaction test-lab3-durability
+[^_^] Pass test-lab3-durability
+Passed part1
+
+Finish testing part1 : no transaction
+
+----------------------------------------
+
+Start testing part2 : 2PL
+
+start 2PL test-lab3-durability
+[^_^] Pass test-lab3-durability
+Passed part2 durability
+
+start 2PL test-lab3-part2-3-basic
+[^_^] Pass test-lab3-part2-3-basic
+Passed part2 basic
+
+start 2PL test-lab3-part2-a
+[^_^] Pass test-lab3-part2-a
+Passed part2 special a
+
+start 2PL test-lab3-part2-b
+[^_^] Pass test-lab3-part2-b
+Passed part2 special b
+
+start 2PL test-lab3-part2-3-complex
+[^_^] Pass test-lab3-part2-3-complex
+Passed part2 complex
+
+Finish testing part2 : 2PL
+
+----------------------------------------
+
+Start testing part3 : OCC
+
+start OCC test-lab3-durability
+[^_^] Pass test-lab3-durability
+Passed part3 durability
+
+start OCC test-lab3-part2-3-basic
+[^_^] Pass test-lab3-part2-3-basic
+Passed part3 basic
+
+start OCC test-lab3-part3-a
+[^_^] Pass test-lab3-part3-a
+Passed part3 special a
+
+start OCC test-lab3-part3-b
+[^_^] Pass test-lab3-part3-b
+Passed part3 special b
+
+start OCC test-lab3-part2-3-complex
+[^_^] Pass test-lab3-part2-3-complex
+Passed part3 complex
+
+Finish testing part3 : OCC
+
+----------------------------------------
+
+Your passed 11/11 tests.
+```

@@ -11,7 +11,7 @@
 #include "ydb_protocol.h"
 #include "ydb_server.h"
 
-#define COMPLEX
+// #define COMPLEX
 #ifdef COMPLEX
 struct user {    // in database
 	int money;
