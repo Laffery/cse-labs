@@ -55,3 +55,121 @@ Finish testing part1 : no transaction
     ```
 
     我们看到事务1改变a b，事务2改变b c，事务3改变c a，都会发生死锁，所以当死锁将要发生时，我们按照文档中说的直接返回ABORT。最开始我的实现会让三个都abort，解决的办法就是不直接abort，而是建立依赖关系map depend，探测是否存在闭环的死锁，参见函数detectDL()
+
+3. complex
+
+    我们直接运行，debug输出为
+
+    ```sh
+    user0 successfully finishes 69 trades
+    user1 successfully finishes 71 trades
+    user2 successfully finishes 72 trades
+    user3 successfully finishes 74 trades
+    user4 successfully finishes 70 trades
+    user5 successfully finishes 75 trades
+    user6 successfully finishes 67 trades
+    user7 successfully finishes 71 trades
+    user8 successfully finishes 73 trades
+    user9 successfully finishes 69 trades
+    user0 money should be 2, actual is 2
+        user0 should have 78 product0, actual is 78
+        user0 should have 63 product1, actual is 63
+        user0 should have 80 product2, actual is 80
+        user0 should have 61 product3, actual is 61
+        user0 should have 62 product4, actual is 62
+    user1 money should be 1, actual is 1
+        user1 should have 71 product0, actual is 71
+        user1 should have 62 product1, actual is 62
+        user1 should have 73 product2, actual is 73
+        user1 should have 75 product3, actual is 75
+        user1 should have 57 product4, actual is 57
+    user2 money should be 1, actual is 1
+        user2 should have 79 product0, actual is 79
+        user2 should have 62 product1, actual is 62
+        user2 should have 64 product2, actual is 64
+        user2 should have 51 product3, actual is 51
+        user2 should have 80 product4, actual is 80
+    user3 money should be 2, actual is 2
+        user3 should have 93 product0, actual is 93
+        user3 should have 77 product1, actual is 77
+        user3 should have 67 product2, actual is 67
+        user3 should have 70 product3, actual is 70
+        user3 should have 54 product4, actual is 54
+    user4 money should be 0, actual is 0
+        user4 should have 58 product0, actual is 58
+        user4 should have 52 product1, actual is 52
+        user4 should have 81 product2, actual is 81
+        user4 should have 75 product3, actual is 75
+        user4 should have 59 product4, actual is 59
+    user5 money should be 3, actual is 3
+        user5 should have 80 product0, actual is 80
+        user5 should have 75 product1, actual is 75
+        user5 should have 72 product2, actual is 72
+        user5 should have 64 product3, actual is 64
+        user5 should have 59 product4, actual is 59
+    user6 money should be 3, actual is 3
+        user6 should have 72 product0, actual is 72
+        user6 should have 65 product1, actual is 65
+        user6 should have 66 product2, actual is 66
+        user6 should have 73 product3, actual is 73
+        user6 should have 61 product4, actual is 61
+    user7 money should be 0, actual is 0
+        user7 should have 64 product0, actual is 64
+        user7 should have 57 product1, actual is 57
+        user7 should have 74 product2, actual is 74
+        user7 should have 60 product3, actual is 60
+        user7 should have 72 product4, actual is 72
+    user8 money should be 0, actual is 0
+        user8 should have 87 product0, actual is 87
+        user8 should have 64 product1, actual is 64
+        user8 should have 76 product2, actual is 76
+        user8 should have 63 product3, actual is 63
+        user8 should have 61 product4, actual is 61
+    user9 money should be 3, actual is 3
+        user9 should have 64 product0, actual is 64
+        user9 should have 73 product1, actual is 73
+        user9 should have 85 product2, actual is 85
+        user9 should have 73 product3, actual is 73
+        user9 should have 48 product4, actual is 48
+    product0 count should be 254, actual is 310
+    error: product count error
+    product1 count should be 350, actual is 440
+    error: product count error
+    product2 count should be 262, actual is 443
+    error: product count error
+    product3 count should be 335, actual is 508
+    error: product count error
+    product4 count should be 387, actual is 550
+    error: product count error
+    [x_x] Fail test-lab3-part2-3-complex
+    ```
+
+    可以看到目前的问题在于商品的数量存在问题，实际数量显然高于理论数量
+
+    我们来梳理一下set的过程
+
+    - 首先获取对应的锁
+    - 查询change_id表看上一次修改这个值的事务tid，如果就是本事务则直接put
+    - 不是本事务，那么就检查tid的状态
+      - BEGIN: tid事务还在进行中，需要进行死锁探测
+        - 有死锁: rollback，abort
+        - 无死锁: 等待tid COMMIT/ABORT，然后执行COMMIT/ABORT对应的操作，如下
+      - COMMIT/ABORT: get出之前的值存放到origin_value中，change_id修改为当前id
+    - 释放锁
+
+    这样看起来貌似没有问题，问题出在哪里呢，就是在于，set之后将锁放了，这样不符合2pl的原则，应该**在事务中止或者提交的时候一并放锁**
+
+    另一方面注意到，ydb_server含有一个lock_client，由于只有一个lock_client，lab2中的锁这里用到就相当于是假锁，所以我们需要再根据lab2的原理，在ydb_server中实现一个锁，参见acquire和release函数
+
+    前面提到，无死锁的时候事务需要等待tid提交或者中止。最开始的时候我是使用condition variable来处理这个等待的过程，但是考虑到可能有多个事务同时等待这个事务，而signal一次只能唤醒一个并且可能错过，所以在实现上并不友好。
+    于是我们在每个事务开始时初始化一个mutex并将其锁上，每个事务都拥有一个，参见map trans_mutex。这样一来，事务id等待事务tid时只需要调用
+
+    > pthread_mutex_lock(&trans_mutex[tid]);
+
+    当事务tid提交或者中止时unlock，即可达成预期的效果
+
+至此 part2全部通过
+
+## Part3 OCC
+
+1. basic
