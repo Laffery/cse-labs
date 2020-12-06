@@ -21,12 +21,20 @@ class extent_server {
 
  public:
   extent_server();
-
+#ifdef CACHE
+  map<extent_protocol::clientid_t, int> clients;
+  int create(extent_protocol::clientid_t clt, uint32_t type, extent_protocol::extentid_t &id);
+  int put(extent_protocol::clientid_t clt, extent_protocol::extentid_t id, std::string, int &);
+  int get(extent_protocol::clientid_t clt, extent_protocol::extentid_t id, std::string &);
+  int getattr(extent_protocol::clientid_t clt, extent_protocol::extentid_t id, extent_protocol::attr &);
+  int remove(extent_protocol::clientid_t clt, extent_protocol::extentid_t id, int &);
+#else
   int create(uint32_t type, extent_protocol::extentid_t &id);
   int put(extent_protocol::extentid_t id, std::string, int &);
   int get(extent_protocol::extentid_t id, std::string &);
   int getattr(extent_protocol::extentid_t id, extent_protocol::attr &);
   int remove(extent_protocol::extentid_t id, int &);
+#endif
 };
 
 #endif 

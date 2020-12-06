@@ -5,11 +5,14 @@
 
 #include "rpc.h"
 
+#define CACHE
+
 class extent_protocol
 {
 public:
 	typedef int status;
 	typedef unsigned long long extentid_t;
+	typedef std::string clientid_t;
 	enum xxstatus
 	{
 		OK,
@@ -23,14 +26,17 @@ public:
 		get,
 		getattr,
 		remove,
-		create
+		create,
+		update,
+		rmcache
 	};
 
 	enum types
 	{
 		T_DIR = 1,
 		T_FILE,
-		T_SYMLINK,
+		T_LINK,
+		T_NONE
 	};
 
 	struct attr

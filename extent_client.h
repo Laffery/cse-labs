@@ -4,6 +4,7 @@
 #define extent_client_h
 
 #include <string>
+#include <map>
 #include "extent_protocol.h"
 #include "extent_server.h"
 
@@ -14,7 +15,20 @@ class extent_client
 private:
 	rpcc *cl;
 
+	int ec_port;
+	string hostname;
+	string id;
+
+	typedef struct extent {
+    	std::string data;
+    	struct extent_protocol::attr attr;
+  	} extent_t;
+
+	map<extent_protocol::extentid_t, extent_t> cache;
+
 public:
+	static int last_port;
+	extent_client() {}
 	extent_client(string dst);
 
 	extent_protocol::status create(uint32_t, extent_protocol::extentid_t &);
@@ -22,6 +36,8 @@ public:
 	extent_protocol::status getattr(extent_protocol::extentid_t, extent_protocol::attr &);
 	extent_protocol::status put(extent_protocol::extentid_t, string);
 	extent_protocol::status remove(extent_protocol::extentid_t);
+	extent_protocol::status update(extent_protocol::extentid_t, string, extent_protocol::attr, int &);
+	extent_protocol::status remove_cache(extent_protocol::extentid_t, int &);
 };
 
 #endif

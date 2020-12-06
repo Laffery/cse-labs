@@ -12,13 +12,17 @@
 yfs_client::yfs_client(std::string extent_dst, std::string lock_dst)
 {
     ec = new extent_client(extent_dst);
-    // Lab2: Use lock_client_cache when you test lock_cache
+
+#ifdef _LOCK_
     // lc = new lock_client(lock_dst);
     lc = new lock_client_cache(lock_dst);
+#endif
+
     if (ec->put(1, "") != extent_protocol::OK)
         printf("error init root dir\n"); // XYB: init root dir
 }
 
+#ifdef _LOCK_
 void
 yfs_client::LOCK(inum ino)
 {
@@ -32,6 +36,17 @@ yfs_client::UNLOCK(inum ino)
     lc->release(ino);
     printf("UNLOCK %llu\n", ino);
 }
+#else
+void
+yfs_client::LOCK(inum ino)
+{
+}
+
+void
+yfs_client::UNLOCK(inum ino)
+{
+}
+#endif
 
 string
 yfs_client::filename(const char *name)
@@ -81,19 +96,19 @@ yfs_client::isfile(inum inum)
     if (ec->getattr(inum, a) != extent_protocol::OK)
     {
         UNLOCK(inum);
-        printf("error getting attr\n");
+        // printf("error getting attr\n");
         return false;
     }
 
     if (a.type == extent_protocol::T_FILE)
     {
         UNLOCK(inum);
-        printf("isfile: %lld is a file\n", inum);
+        // printf("isfile: %lld is a file\n", inum);
         return true;
     }
 
     UNLOCK(inum);
-    printf("isfile: %lld is not a file\n", inum);
+    // printf("isfile: %lld is not a file\n", inum);
     return false;
 }
 
@@ -106,19 +121,19 @@ yfs_client::isdir(inum inum)
     if (ec->getattr(inum, a) != extent_protocol::OK)
     {
         UNLOCK(inum);
-        printf("error getting attr\n");
+        // printf("error getting attr\n");
         return false;
     }
 
     if (a.type == extent_protocol::T_DIR)
     {
         UNLOCK(inum);
-        printf("isdir: %lld is a dir\n", inum);
+        // printf("isdir: %lld is a dir\n", inum);
         return true;
     } 
 
     UNLOCK(inum);
-    printf("isdir: %lld is not a dir\n", inum);
+    // printf("isdir: %lld is not a dir\n", inum);
     return false;
 }
 
@@ -131,19 +146,19 @@ yfs_client::issymlink(inum inum)
     if (ec->getattr(inum, a) != extent_protocol::OK)
     {
         UNLOCK(inum);
-        printf("error getting attr\n");
+        // printf("error getting attr\n");
         return false;
     }
 
-    if (a.type == extent_protocol::T_SYMLINK)
+    if (a.type == extent_protocol::T_LINK)
     {
         UNLOCK(inum);
-        printf("issymlink: %lld is a symlink\n", inum);
+        // printf("issymlink: %lld is a symlink\n", inum);
         return true;
     }
 
     UNLOCK(inum);
-    printf("issymlink: %lld is not a symlink\n", inum);
+    // printf("issymlink: %lld is not a symlink\n", inum);
     return false;
 }
 
@@ -154,7 +169,7 @@ yfs_client::getfile(inum inum, fileinfo &fin)
     int r = OK;
 
     LOCK(inum);
-    printf("getfile %016llx\n", inum);
+    // printf("getfile %016llx\n", inum);
     extent_protocol::attr a;
     if (ec->getattr(inum, a) != extent_protocol::OK) {
         r = IOERR;
@@ -165,7 +180,7 @@ yfs_client::getfile(inum inum, fileinfo &fin)
     fin.mtime = a.mtime;
     fin.ctime = a.ctime;
     fin.size = a.size;
-    printf("getfile %016llx -> sz %llu\n", inum, fin.size);
+    // printf("getfile %016llx -> sz %llu\n", inum, fin.size);
 
 release:
     UNLOCK(inum);
@@ -178,7 +193,7 @@ yfs_client::getdir(inum inum, dirinfo &din)
     int r = OK;
 
     LOCK(inum);
-    printf("getdir %016llx\n", inum);
+    // printf("getdir %016llx\n", inum);
     extent_protocol::attr a;
     if (ec->getattr(inum, a) != extent_protocol::OK) {
         r = IOERR;
@@ -199,7 +214,7 @@ yfs_client::getsymlink(inum inum, syminfo &sin)
     int r = OK;
 
     LOCK(inum);
-    printf("getsymlink %016llx\n", inum);
+    // printf("getsymlink %016llx\n", inum);
     extent_protocol::attr a;
     if (ec->getattr(inum, a) != extent_protocol::OK) {
         r = IOERR;
@@ -210,7 +225,7 @@ yfs_client::getsymlink(inum inum, syminfo &sin)
     sin.mtime = a.mtime;
     sin.ctime = a.ctime;
     sin.size = a.size;
-    printf("getsymlink %016llx -> sz %llu\n", inum, sin.size);
+    // printf("getsymlink %016llx -> sz %llu\n", inum, sin.size);
 
 release:
     UNLOCK(inum);
@@ -235,7 +250,7 @@ yfs_client::setattr(inum ino, size_t size)
     
     if (size < 0)
     {
-        printf("YFS: _setattr Error: size %lu less than 0\n", size);
+        // printf("YFS: _setattr Error: size %lu less than 0\n", size);
         return IOERR;
     }
 
@@ -245,7 +260,7 @@ yfs_client::setattr(inum ino, size_t size)
     LOCK(ino);
     if ((r = ec->get(ino, buf)) != extent_protocol::OK)
     {
-        printf("YFS: _setattr Error: cannot get the content of inode %llu\n", ino);
+        // printf("YFS: _setattr Error: cannot get the content of inode %llu\n", ino);
         UNLOCK(ino);
         return r;
     }
@@ -257,7 +272,7 @@ yfs_client::setattr(inum ino, size_t size)
     // store back, attr of inode will be correct by write_inode
     if ((r = ec->put(ino, buf)) != extent_protocol::OK)
     {
-        printf("YFS: _setattr Error: cannot store modified content to inode %llu\n", ino);
+        // printf("YFS: _setattr Error: cannot store modified content to inode %llu\n", ino);
         UNLOCK(ino);
         return r;
     }
@@ -275,16 +290,16 @@ yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
     bool found = false;
 
     LOCK(parent);
-    if ((r = lookup(parent, name, found, ino_out)) != OK)
+    if ((r = lookvp(parent, name, found, ino_out)) != OK)
     {
-        printf("YFS: _create Error: cannot open dir inode %llu", parent);
+        // printf("YFS: _create Error: cannot open dir inode %llu", parent);
         UNLOCK(parent);
         return r;
     }
 
     if (found)
     {
-        printf("YFS: _create Error: file '%s' has been existed\n", filename(name).c_str());
+        // printf("YFS: _create Error: file '%s' has been existed\n", filename(name).c_str());
         UNLOCK(parent);
         return EXIST;
     }
@@ -294,7 +309,7 @@ yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
     // alloc inode for the new file
     if ((r = ec->create(extent_protocol::T_FILE, ino_out)) != extent_protocol::OK)
     {
-        printf("YFS: _create Error: cannot allocate inode for file '%s'\n", filename(name).c_str());
+        // printf("YFS: _create Error: cannot allocate inode for file '%s'\n", filename(name).c_str());
         UNLOCK(parent);
         return r;
     }
@@ -304,7 +319,7 @@ yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
     string buf;
     if ((r = ec->get(parent, buf)) != extent_protocol::OK)
     {
-        printf("YFS: _create Error: cannot open dir inode %llu\n", parent);
+        // printf("YFS: _create Error: cannot open dir inode %llu\n", parent);
         UNLOCK(parent);
         return r;
     }
@@ -313,7 +328,7 @@ yfs_client::create(inum parent, const char *name, mode_t mode, inum &ino_out)
     string _entry_;
     if ((r = ec->put(parent, buf.insert(buf.size(), (_entry_ = entry(name, ino_out))))) != extent_protocol::OK)
     {
-        printf("YFS: _create Error: connot write entry '%s' to dir\n", _entry_.c_str());
+        // printf("YFS: _create Error: connot write entry '%s' to dir\n", _entry_.c_str());
         UNLOCK(parent);
         return r;
     }
@@ -331,16 +346,16 @@ yfs_client::mkdir(inum parent, const char *name, mode_t mode, inum &ino_out)
     bool found = false;
 
     LOCK(parent);
-    if ((r = lookup(parent, name, found, ino_out)) != extent_protocol::OK)
+    if ((r = lookvp(parent, name, found, ino_out)) != extent_protocol::OK)
     {
-        printf("YFS: _mkdir: look up failed\n");
+        // printf("YFS: _mkdir: look vp failed\n");
         UNLOCK(parent);
         return r;
     }
 
     if (found)
     {
-        printf("YFS: _create: file '%s' is existed in %llu\n", name, parent);
+        // printf("YFS: _create: file '%s' is existed in %llu\n", name, parent);
         UNLOCK(parent);
         return EXIST;
     }
@@ -348,7 +363,7 @@ yfs_client::mkdir(inum parent, const char *name, mode_t mode, inum &ino_out)
     // LOCK(parent);
     if ((r = ec->create(extent_protocol::T_DIR, ino_out)) != extent_protocol::OK)
     {
-        printf("YFS: _mkdir: failed to create dir in %llu\n", parent);
+        // printf("YFS: _mkdir: failed to create dir in %llu\n", parent);
         UNLOCK(parent);
         return r;
     }
@@ -358,7 +373,7 @@ yfs_client::mkdir(inum parent, const char *name, mode_t mode, inum &ino_out)
     // get parent dir
     if ((r = ec->get(parent, buf)) != extent_protocol::OK)
     {
-        printf("YFS: _mkdir: cannot open dir %llu\n", parent);
+        // printf("YFS: _mkdir: cannot open dir %llu\n", parent);
         UNLOCK(parent);
         return r;
     }
@@ -367,7 +382,7 @@ yfs_client::mkdir(inum parent, const char *name, mode_t mode, inum &ino_out)
 
     if ((r = ec->put(parent, buf)) != extent_protocol::OK)
     {
-        printf("YFS: _mkdir: failed to write back %llu\n", parent);
+        // printf("YFS: _mkdir: failed to write back %llu\n", parent);
         UNLOCK(parent);
         return r;
     }
@@ -385,10 +400,50 @@ yfs_client::lookup(inum parent, const char *name, bool &found, inum &ino_out)
     string buf;
     
     // read parent dir
+    LOCK(parent);
+    r = ec->get(parent, buf);
+    UNLOCK(parent);
+
+    if (r != extent_protocol::OK) {
+        // printf("Lookup Error: cannot open dir inode %llu\n", parent);
+        return r;
+    }
+
+    string _name_str_ = filename(name);  
+
+    // loop for every entry in the parent dir
+    for (size_t i = 0; i < buf.size(); i += DIR_ENTRY_LEN)
+    {
+        // the ith filename
+        string _file_name_ = buf.substr(i, DIR_FNAME_LEN);
+        // find it!
+        if (!strcmp(_file_name_.c_str(), _name_str_.c_str()))
+        {
+            ino_out = n2i(buf.substr(i + DIR_FNAME_LEN, DIR_INODE_LEN));
+            // printf("YFS: _lookup: file '%s' is found with inode %llu\n", _name_str_.c_str(), ino_out);
+            found = true;
+            return OK;
+        }
+    }
+
+    // not found
+    found = false;
+    // printf("YFS: _lookup: file '%s' does not exist\n", _name_str_.c_str());
+    return OK;
+}
+
+int
+yfs_client::lookvp(inum parent, const char *name, bool &found, inum &ino_out)
+{
+    // printf("YFS: _lookvp '%s' in %llu\n", name, parent);
+    int r = OK;
+    string buf;
+    
+    // read parent dir
     // LOCK(parent);
     if ((r = ec->get(parent, buf)) != extent_protocol::OK)
     {
-        printf("Lookup Error: cannot open dir inode %llu\n", parent);
+        // printf("Lookup Error: cannot open dir inode %llu\n", parent);
         // UNLOCK(parent);
         return r;
     }
@@ -407,7 +462,7 @@ yfs_client::lookup(inum parent, const char *name, bool &found, inum &ino_out)
         if (!strcmp(_file_name_.c_str(), _name_str_.c_str()))
         {
             ino_out = n2i(buf.substr(i + DIR_FNAME_LEN, DIR_INODE_LEN));
-            printf("YFS: _lookup: file '%s' is found with inode %llu\n", _name_str_.c_str(), ino_out);
+            // printf("YFS: _lookvp: file '%s' is found with inode %llu\n", _name_str_.c_str(), ino_out);
             found = true;
             return OK;
         }
@@ -415,7 +470,7 @@ yfs_client::lookup(inum parent, const char *name, bool &found, inum &ino_out)
 
     // not found
     found = false;
-    // printf("YFS: _lookup: file '%s' does not exist\n", _name_str_.c_str());
+    // printf("YFS: _lookvp: file '%s' does not exist\n", _name_str_.c_str());
     return OK;
 }
 
@@ -427,7 +482,7 @@ yfs_client::readdir(inum dir, std::list<dirent> &list)
 
     if (dir <= 0 || dir > INODE_NUM)
     {
-        printf("YFS: _readdir Error: dir inode %llu out of range\n", dir);
+        // printf("YFS: _readdir Error: dir inode %llu out of range\n", dir);
         return IOERR;
     }
 
@@ -435,7 +490,7 @@ yfs_client::readdir(inum dir, std::list<dirent> &list)
     LOCK(dir);
     if ((r = ec->get(dir, buf)) != extent_protocol::OK)
     {
-        printf("YFS: _readdir Error: cannot open dir %llu\n", dir);
+        // printf("YFS: _readdir Error: cannot open dir %llu\n", dir);
         UNLOCK(dir);
         return r;
     }
@@ -446,11 +501,11 @@ yfs_client::readdir(inum dir, std::list<dirent> &list)
 
     for (size_t i = 0; i < buf.size(); i += DIR_ENTRY_LEN)
     {
-        printf("i: %lu, buf.size: %lu\n", i, buf.size());
+        // printf("i: %lu, buf.size: %lu\n", i, buf.size());
         struct dirent _entry_;
         _entry_.name = buf.substr(i, DIR_FNAME_LEN);
         _entry_.inum = n2i(buf.substr(i + DIR_FNAME_LEN, DIR_INODE_LEN));
-        printf("\tentry(ino, name): %llu, %s\n", _entry_.inum, _entry_.name.c_str());
+        // printf("\tentry(ino, name): %llu, %s\n", _entry_.inum, _entry_.name.c_str());
         list.push_back(_entry_);
     }
 
@@ -460,14 +515,14 @@ yfs_client::readdir(inum dir, std::list<dirent> &list)
 int
 yfs_client::read(inum ino, size_t size, off_t off, std::string &data)
 {
-    // printf("YFS: _read %llu sz %lu off %ld\n", ino, size, off);
+    printf("YFS: _read %llu sz %lu off %ld\n", ino, size, off);
     int r = OK;
     string buf;
 
     LOCK(ino);
     if ((r = ec->get(ino, buf)) != extent_protocol::OK)
     {
-        printf("YFS: _read: cannot open file %llu\n", ino);
+        // printf("YFS: _read: cannot open file %llu\n", ino);
         UNLOCK(ino);
         return r;
     }
@@ -478,7 +533,7 @@ yfs_client::read(inum ino, size_t size, off_t off, std::string &data)
     if (off < 0 || off > (long)_size_)
     {
         data = "";
-        printf("YFS: _read: off %ld is out of range %lu\n", off, _size_);
+        // printf("YFS: _read: off %ld is out of range %lu\n", off, _size_);
         return IOERR;
     }
 
@@ -507,7 +562,7 @@ yfs_client::write(inum ino, size_t size, off_t off, const char *data, size_t &by
     LOCK(ino);
     if ((r = ec->get(ino, buf)) != extent_protocol::OK)
     {
-        printf("YFS: _write: cannot open file %llu\n", ino);
+        // printf("YFS: _write: cannot open file %llu\n", ino);
         UNLOCK(ino);
         return r;
     }
@@ -556,10 +611,8 @@ yfs_client::write(inum ino, size_t size, off_t off, const char *data, size_t &by
     }
     
 
-    if ((r = ec->put(ino, buf)) != extent_protocol::OK)
-    {
-        printf("YFS: _write: failed to write back to %llu\n", ino);
-    }
+    ec->put(ino, buf);
+    // printf("YFS: _write: failed to write back to %llu\n", ino);
 
     UNLOCK(ino);
     return r;
@@ -573,16 +626,16 @@ int yfs_client::unlink(inum parent,const char *name)
     bool found = false;
 
     LOCK(parent);
-    if ((r = lookup(parent, name, found, ino)) != extent_protocol::OK)
+    if ((r = lookvp(parent, name, found, ino)) != extent_protocol::OK)
     {
-        printf("YFS: _unlink: some error in lookup '%s' in %llu\n", name, parent);
+        // printf("YFS: _unlink: some error in lookvp '%s' in %llu\n", name, parent);
         UNLOCK(parent);
         return r;
     }
 
     if (!found)
     {
-        printf("YFS: _unlink: '%s' is not in %llu\n", name, parent);
+        // printf("YFS: _unlink: '%s' is not in %llu\n", name, parent);
         UNLOCK(parent);
         return NOENT;
     }
@@ -591,7 +644,7 @@ int yfs_client::unlink(inum parent,const char *name)
     // remove file
     if ((r = ec->remove(ino)) != extent_protocol::OK)
     {
-        printf("YFS: _unlink: failed to remove inode %llu\n", ino);
+        // printf("YFS: _unlink: failed to remove inode %llu\n", ino);
         UNLOCK(parent);
         UNLOCK(ino);
         return r;
@@ -604,7 +657,7 @@ int yfs_client::unlink(inum parent,const char *name)
     string buf;
     if ((r = ec->get(parent, buf)) != extent_protocol::OK)
     {
-        printf("YFS: _unlink: failed to open %llu\n", parent);
+        // printf("YFS: _unlink: failed to open %llu\n", parent);
         UNLOCK(parent);
         return r;
     }
@@ -619,10 +672,8 @@ int yfs_client::unlink(inum parent,const char *name)
         }
     }
 
-    if ((r = ec->put(parent, buf)) != extent_protocol::OK)
-    {
-        printf("YFS: _unlink: failed to write back %llu\n", parent);
-    }
+    ec->put(parent, buf);
+        // printf("YFS: _unlink: failed to write back %llu\n", parent);
 
     UNLOCK(parent); 
     // printf("YFS: _unlink '%s' in %llu\n", name, parent);
@@ -637,9 +688,9 @@ yfs_client::symlink(inum parent, const char *link, inum &ino_out, const char *na
 
     // create a new inode
     LOCK(parent);
-    if ((r = ec->create(extent_protocol::T_SYMLINK, ino_out)) != extent_protocol::OK)
+    if ((r = ec->create(extent_protocol::T_LINK, ino_out)) != extent_protocol::OK)
     {
-        printf("YFS: _symlink: cannot create a new inode\n");
+        // printf("YFS: _symlink: cannot create a new inode\n");
         UNLOCK(parent);
         return r;
     }
@@ -648,7 +699,7 @@ yfs_client::symlink(inum parent, const char *link, inum &ino_out, const char *na
     // save linked path to inode ino_out
     if ((r = ec->put(ino_out, string(link))) != extent_protocol::OK)
     {
-        printf("YFS: _symlink: failed to write link contene\n");
+        // printf("YFS: _symlink: failed to write link contene\n");
         UNLOCK(ino_out);
         UNLOCK(parent);
         return r;
@@ -658,7 +709,7 @@ yfs_client::symlink(inum parent, const char *link, inum &ino_out, const char *na
     string buf;
     if ((r = ec->get(parent, buf)) != extent_protocol::OK)
     {
-        printf("YFS: _symlink: cannot open dir %llu\n", parent);
+        // printf("YFS: _symlink: cannot open dir %llu\n", parent);
         UNLOCK(parent);
         return r;
     }
@@ -667,7 +718,7 @@ yfs_client::symlink(inum parent, const char *link, inum &ino_out, const char *na
 
     if ((r = ec->put(parent, buf)) != extent_protocol::OK)
     {
-        printf("YFS: _symlink: failed to write back to dir %llu\n", parent);
+        // printf("YFS: _symlink: failed to write back to dir %llu\n", parent);
         UNLOCK(parent);
         return r;
     }
@@ -687,7 +738,7 @@ yfs_client::readlink(inum ino, string &data)
     if ((r = ec->get(ino, data)) != extent_protocol::OK)
     {
         UNLOCK(ino);
-        printf("YFS: _readlink: some error in read\n");
+        // printf("YFS: _readlink: some error in read\n");
         return r;
     }
 

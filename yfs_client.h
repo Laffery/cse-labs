@@ -13,10 +13,14 @@ using namespace std;
 
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
+#define _LOCK_
+
 class yfs_client
 {
 	extent_client *ec;
+#ifdef _LOCK_
 	lock_client *lc;
+#endif
 
 public:
 	typedef unsigned long long inum;
@@ -78,6 +82,7 @@ public:
 
 	int setattr(inum, size_t);
 	int lookup(inum, const char *, bool &, inum &);
+	int lookvp(inum, const char *, bool &, inum &);
 	int create(inum, const char *, mode_t, inum &);
 	int readdir(inum, std::list<dirent> &);
 	int write(inum, size_t, off_t, const char *, size_t &);

@@ -58,7 +58,7 @@ getattr(yfs_client::inum inum, struct stat &st)
         st.st_mtime = info.mtime;
         st.st_ctime = info.ctime;
         st.st_size = info.size;
-        printf("   getattr(sz) -> %llu\n", info.size);
+        // printf("   getattr(sz) -> %llu\n", info.size);
     }
     else if (yfs->isdir(inum))
     {
@@ -71,7 +71,7 @@ getattr(yfs_client::inum inum, struct stat &st)
         st.st_atime = info.atime;
         st.st_mtime = info.mtime;
         st.st_ctime = info.ctime;
-        printf("   getattr(a,c,m) -> %lu %lu %lu\n", info.atime, info.mtime, info.ctime);
+        // printf("   getattr(a,c,m) -> %lu %lu %lu\n", info.atime, info.mtime, info.ctime);
     }
     else
     {
@@ -85,7 +85,7 @@ getattr(yfs_client::inum inum, struct stat &st)
         st.st_mtime = info.mtime;
         st.st_ctime = info.ctime;
         st.st_size = info.size;
-        printf("   getattr(sz) -> %llu\n", info.size);
+        // printf("   getattr(sz) -> %llu\n", info.size);
     }
     return yfs_client::OK;
 }
@@ -108,7 +108,7 @@ getattr(yfs_client::inum inum, struct stat &st)
 void fuseserver_getattr(fuse_req_t req, fuse_ino_t ino,
                         struct fuse_file_info *fi)
 {
-    printf("\nFUSE: _getattr %lu\n", ino);
+    // printf("\nFUSE: _getattr %lu\n", ino);
     struct stat st;
     yfs_client::inum inum = ino; // req->in.h.nodeid;
     yfs_client::status ret;
@@ -138,10 +138,10 @@ void fuseserver_getattr(fuse_req_t req, fuse_ino_t ino,
 void fuseserver_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
                         int to_set, struct fuse_file_info *fi)
 {
-    printf("\nFUSE: _setattr 0x%x\n", to_set);
+    // printf("\nFUSE: _setattr 0x%x\n", to_set);
     if (FUSE_SET_ATTR_SIZE & to_set)
     {
-        printf("   fuseserver_setattr set size to %zu\n", attr->st_size);
+        // printf("   fuseserver_setattr set size to %zu\n", attr->st_size);
         struct stat st;
 
 #if 1
@@ -175,7 +175,7 @@ void fuseserver_setattr(fuse_req_t req, fuse_ino_t ino, struct stat *attr,
 void fuseserver_read(fuse_req_t req, fuse_ino_t ino, size_t size,
                      off_t off, struct fuse_file_info *fi)
 {
-    printf("\nFUSE: _read %lu\n", ino);
+    // printf("\nFUSE: _read %lu\n", ino);
 #if 1
     std::string buf;
     // Change the above "#if 0" to "#if 1", and your code goes here
@@ -210,7 +210,7 @@ void fuseserver_write(fuse_req_t req, fuse_ino_t ino,
                       const char *buf, size_t size, off_t off,
                       struct fuse_file_info *fi)
 {
-    printf("\nFUSE: _write %lu\n", ino);
+    // printf("\nFUSE: _write %lu\n", ino);
 #if 1
     // Change the above line to "#if 1", and your code goes here
     int r;
@@ -269,13 +269,13 @@ fuseserver_createhelper(fuse_ino_t parent, const char *name,
 void fuseserver_create(fuse_req_t req, fuse_ino_t parent, const char *name,
                        mode_t mode, struct fuse_file_info *fi)
 {
-    printf("\nFUSE: _create %s\n", name);
+    // printf("\nFUSE: _create %s\n", name);
     struct fuse_entry_param e;
     yfs_client::status ret;
     if ((ret = fuseserver_createhelper(parent, name, mode, &e, extent_protocol::T_FILE)) == yfs_client::OK)
     {
         fuse_reply_create(req, &e, fi);
-        printf("OK: create returns.\n");
+        // printf("OK: create returns.\n");
     } else {
         if (ret == yfs_client::EXIST) {
             fuse_reply_err(req, EEXIST);
@@ -288,7 +288,7 @@ void fuseserver_create(fuse_req_t req, fuse_ino_t parent, const char *name,
 void fuseserver_mknod(fuse_req_t req, fuse_ino_t parent,
                       const char *name, mode_t mode, dev_t rdev)
 {
-    printf("\nFUSE: _mknod\n");
+    // printf("\nFUSE: _mknod\n");
     struct fuse_entry_param e;
     yfs_client::status ret;
     if ((ret = fuseserver_createhelper(parent, name, mode, &e, extent_protocol::T_FILE)) == yfs_client::OK) {
@@ -309,7 +309,7 @@ void fuseserver_mknod(fuse_req_t req, fuse_ino_t parent,
 //
 void fuseserver_lookup(fuse_req_t req, fuse_ino_t parent, const char *name)
 {
-    printf("\nFUSE: _lookup '%s' in %lu\n", name, parent);
+    // printf("\nFUSE: _lookup '%s' in %lu\n", name, parent);
     struct fuse_entry_param e;
     // In yfs, timeouts are always set to 0.0, and generations are always set to 0
     e.attr_timeout = 0.0;
@@ -373,7 +373,7 @@ void fuseserver_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
     yfs_client::inum inum = ino; // req->in.h.nodeid;
     struct dirbuf b;
 
-    printf("\nFUSE: _readdir %lu\n", ino);
+    // printf("\nFUSE: _readdir %lu\n", ino);
 
     if (!yfs->isdir(inum))
     {
@@ -397,7 +397,7 @@ void fuseserver_readdir(fuse_req_t req, fuse_ino_t ino, size_t size,
 void fuseserver_open(fuse_req_t req, fuse_ino_t ino,
                      struct fuse_file_info *fi)
 {
-    printf("\nFUSE: _open %lu\n", ino);
+    // printf("\nFUSE: _open %lu\n", ino);
     fuse_reply_open(req, fi);
 }
 
@@ -414,7 +414,7 @@ void fuseserver_open(fuse_req_t req, fuse_ino_t ino,
 void fuseserver_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
                       mode_t mode)
 {
-    printf("\nFUSE: _mkdir\n");
+    // printf("\nFUSE: _mkdir\n");
     struct fuse_entry_param e;
     // In yfs, timeouts are always set to 0.0, and generations are always set to 0
     e.attr_timeout = 0.0;
@@ -449,7 +449,7 @@ void fuseserver_mkdir(fuse_req_t req, fuse_ino_t parent, const char *name,
 //
 void fuseserver_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
 {
-    printf("\nFUSE: _unlink\n");
+    // printf("\nFUSE: _unlink\n");
     int r;
     if ((r = yfs->unlink(parent, name)) == yfs_client::OK) {
         fuse_reply_err(req, 0);
@@ -464,7 +464,7 @@ void fuseserver_unlink(fuse_req_t req, fuse_ino_t parent, const char *name)
 
 void fuseserver_symlink(fuse_req_t req, const char *link, fuse_ino_t parent, const char *name)
 {
-    printf("\nFUSE: _symlink(link, name): '%s' '%s'\n", link, name);
+    // printf("\nFUSE: _symlink(link, name): '%s' '%s'\n", link, name);
     struct fuse_entry_param e;
     e.attr_timeout = 0.0;
     e.entry_timeout = 0.0;
@@ -477,7 +477,7 @@ void fuseserver_symlink(fuse_req_t req, const char *link, fuse_ino_t parent, con
         e.ino = ino;
         getattr(ino, e.attr);
         fuse_reply_entry(req, &e);
-        printf("FUSE: _symlink success\n");
+        // printf("FUSE: _symlink success\n");
     }
     else
     {
@@ -487,7 +487,7 @@ void fuseserver_symlink(fuse_req_t req, const char *link, fuse_ino_t parent, con
 
 void fuseserver_readlink(fuse_req_t req, fuse_ino_t ino)
 {
-    printf("\nFUSE: _readlink %lu\n", ino);
+    // printf("\nFUSE: _readlink %lu\n", ino);
 #if 1
     string buf;
     int r;
@@ -506,7 +506,7 @@ void fuseserver_statfs(fuse_req_t req)
 {
     struct statvfs buf;
 
-    printf("statfs\n");
+    // printf("statfs\n");
 
     memset(&buf, 0, sizeof(buf));
 
