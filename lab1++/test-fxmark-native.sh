@@ -1,0 +1,1 @@
+./fxmark/bin/fxmark --type=YFS --root=./native --ncore=1 --duration=5
